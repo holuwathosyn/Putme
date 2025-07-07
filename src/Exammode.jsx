@@ -1,558 +1,682 @@
-import { useState, useEffect } from 'react';
-import { FiCheckCircle, FiAward, FiClock, FiDivide, FiX, FiMinus, FiPlus, FiPercent } from 'react-icons/fi';
-import { FaCalculator } from 'react-icons/fa';
+import React, { useState, useEffect, useMemo } from 'react';
+import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
+import { FaCalculator, FaLock, FaArrowLeft } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
-const QuizApp = () => {
-  const [subjects, setSubjects] = useState([
-    { id: 1, name: 'Mathematics' },
-    { id: 2, name: 'Science' },
-    { id: 3, name: 'History' },
-    { id: 4, name: 'English' }
-  ]);
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+const ExamMode = () => {
+  const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
+  const [examId, setExamId] = useState(null);
   const [questions, setQuestions] = useState([]);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState([]);
-  const [score, setScore] = useState(0);
-  const [showScore, setShowScore] = useState(false);
-  const [showCalculator, setShowCalculator] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [quizStarted, setQuizStarted] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [quizCompleted, setQuizCompleted] = useState(false);
   const [quizResults, setQuizResults] = useState(null);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const generateMockQuestions = (subjectId) => {
-    // Generate 10 mock questions for the selected subject
-    const mockQuestions = [];
-    for (let i = 1; i <= 10; i++) {
-      mockQuestions.push({
-        id: i,
-        questionText: `Sample question ${i} for ${subjects.find(s => s.id === subjectId)?.name || 'subject'}`,
-        options: [
-          { id: `${i}-1`, optionText: 'Option A' },
-          { id: `${i}-2`, optionText: 'Option B' },
-          { id: `${i}-3`, optionText: 'Option C' },
-          { id: `${i}-4`, optionText: 'Option D' }
-        ]
-      });
-    }
-    return mockQuestions;
-  };
-
-  const selectSubject = (subject) => {
-    setSelectedSubject(subject);
-    setLoading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      const mockQuestions = generateMockQuestions(subject.id);
-      setQuestions(mockQuestions);
-      setSelectedOptions(Array(mockQuestions.length).fill(null));
-      setQuizStarted(true);
-      setLoading(false);
-    }, 500);
-  };
-
-  const submitAnswers = () => {
-    setLoading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      // Calculate random score (between 40% and 90% correct)
-      const correct = Math.floor(questions.length * (0.4 + Math.random() * 0.5));
-      setScore(correct);
-      
-      // Generate mock quiz results
-      const mockResults = {
-        correct,
-        answers: questions.map((q, index) => ({
-          questionText: q.questionText,
-          isCorrect: Math.random() > 0.3, // 70% chance of being correct
-          explanation: `This is a sample explanation for question ${index + 1}`
-        }))
-      };
-      
-      setQuizResults(mockResults);
-      setShowScore(true);
-      setLoading(false);
-    }, 800);
-  };
-
-  const handleOptionSelect = (optionId) => {
-    const newSelectedOptions = [...selectedOptions];
-    newSelectedOptions[currentQuestion] = optionId;
-    setSelectedOptions(newSelectedOptions);
-  };
-
-  const handleNextQuestion = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      submitAnswers();
-    }
-  };
-
-  const handlePreviousQuestion = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-    }
-  };
-
-  const resetQuiz = () => {
-    setCurrentQuestion(0);
-    setSelectedOptions([]);
-    setScore(0);
-    setShowScore(false);
-    setQuizStarted(false);
-    setQuizResults(null);
-    setQuestions([]);
-  };
-
-  const toggleCalculator = () => {
-    setShowCalculator(!showCalculator);
-  };
-
-  if (loading && !quizStarted) {
-    return (
-      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
-        <div className="text-2xl font-semibold text-blue-500">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!quizStarted) {
-    return (
-      <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="bg-blue-300 p-6 text-white">
-            <h1 className="text-2xl font-bold">Select a Subject</h1>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {subjects.map((subject) => (
-                <button
-                  key={subject.id}
-                  onClick={() => selectSubject(subject)}
-                  className="p-4 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors text-center"
-                >
-                  {subject.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-blue-50 flex items-center justify-center p-2 sm:p-4">
-      <div className="w-full mt-24 max-w-6xl flex flex-col md:flex-row gap-4 sm:gap-6 relative">
-        {/* Quiz Section */}
-        <div className={`w-full bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 ${
-          showCalculator && !isMobile ? 'md:w-2/3' : 'w-full'
-        }`}>
-          {/* Header */}
-          <div className="bg-blue-300 p-4 sm:p-6 text-white">
-            <div className="flex justify-between items-start">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold">{selectedSubject?.name} Quiz</h1>
-                <div className="flex justify-between items-center mt-2 text-sm sm:text-base">
-                  <div className="flex items-center">
-                    <FiClock className="mr-1" />
-                    <span>{questions.length} Questions</span>
-                  </div>
-                  <div className="flex items-center">
-                    <FiAward className="mr-1" />
-                    <span>Score: {score}/{questions.length}</span>
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={toggleCalculator}
-                className={`flex items-center gap-1 sm:gap-2 px-3 py-1 sm:px-4 sm:py-2 rounded-lg transition-all ${
-                  showCalculator
-                    ? 'bg-blue-400 hover:bg-blue-500'
-                    : 'bg-blue-200 hover:bg-blue-300'
-                } shadow-md hover:shadow-lg active:scale-95 text-sm sm:text-base`}
-              >
-                <FaCalculator className="text-sm sm:text-base" />
-                <span className="hidden sm:inline">Calculator</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="h-2 bg-blue-100">
-            <div
-              className="h-full bg-blue-400 transition-all duration-300"
-              style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
-            ></div>
-          </div>
-
-          {/* Quiz Content */}
-          <div className="p-4 sm:p-6">
-            {showScore ? (
-              <div className="text-center">
-                <div className="text-2xl sm:text-4xl font-bold text-blue-500 mb-4">Quiz Completed!</div>
-                <div className="text-xl sm:text-2xl mb-6">
-                  Your score: <span className="font-bold">{score}</span> out of {questions.length} ({Math.round((score / questions.length) * 100)}%)
-                </div>
-                
-                {quizResults && (
-                  <div className="mb-6 text-left">
-                    {quizResults.answers.map((answer, index) => (
-                      <div key={index} className={`mb-4 p-3 rounded-lg ${answer.isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
-                        <div className="font-semibold">{answer.questionText}</div>
-                        <div className="text-sm mt-1">
-                          {answer.isCorrect ? (
-                            <span className="text-green-600">✓ Correct</span>
-                          ) : (
-                            <span className="text-red-600">✗ Incorrect</span>
-                          )}
-                        </div>
-                        {answer.explanation && (
-                          <div className="text-sm text-gray-600 mt-1">
-                            <span className="font-medium">Explanation:</span> {answer.explanation}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                <button
-                  onClick={resetQuiz}
-                  className="bg-blue-300 hover:bg-blue-400 text-white font-bold py-2 px-6 rounded-lg transition-colors"
-                >
-                  Start New Quiz
-                </button>
-              </div>
-            ) : (
-              <>
-                {questions.length > 0 && (
-                  <>
-                    <div className="mb-4 sm:mb-6">
-                      <div className="text-sm sm:text-base text-gray-500 mb-1">
-                        Question {currentQuestion + 1} of {questions.length}
-                      </div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
-                        {questions[currentQuestion].questionText}
-                      </h2>
-                    </div>
-
-                    <div className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
-                      {questions[currentQuestion].options.map((option) => (
-                        <div
-                          key={option.id}
-                          onClick={() => handleOptionSelect(option.id)}
-                          className={`p-3 sm:p-4 border rounded-lg cursor-pointer transition-all ${
-                            selectedOptions[currentQuestion] === option.id
-                              ? 'border-blue-300 bg-blue-50 text-blue-600'
-                              : 'border-gray-200 hover:border-blue-200'
-                          }`}
-                        >
-                          <div className="flex items-center">
-                            <div
-                              className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border mr-2 sm:mr-3 flex items-center justify-center ${
-                                selectedOptions[currentQuestion] === option.id
-                                  ? 'border-blue-300 bg-blue-300 text-white'
-                                  : 'border-gray-300'
-                              }`}
-                            >
-                              {selectedOptions[currentQuestion] === option.id && <FiCheckCircle size={12} className="sm:w-3.5 sm:h-3.5" />}
-                            </div>
-                            <span className="text-sm sm:text-base">{option.optionText}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-between">
-                      <button
-                        onClick={handlePreviousQuestion}
-                        disabled={currentQuestion === 0}
-                        className={`py-1 sm:py-2 px-3 sm:px-4 rounded-lg text-sm sm:text-base ${
-                          currentQuestion === 0
-                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                        }`}
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={handleNextQuestion}
-                        disabled={!selectedOptions[currentQuestion]}
-                        className={`py-1 sm:py-2 px-4 sm:px-6 rounded-lg text-sm sm:text-base ${
-                          !selectedOptions[currentQuestion]
-                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-blue-300 hover:bg-blue-400 text-white font-bold'
-                        } transition-colors`}
-                      >
-                        {currentQuestion === questions.length - 1 ? 'Submit' : 'Next'}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Calculator Section */}
-        {showCalculator && (
-          <Calculator onClose={toggleCalculator} isMobile={isMobile} />
-        )}
-      </div>
-    </div>
-  );
-};
-
-const Calculator = ({ onClose, isMobile }) => {
-  const [calcInput, setCalcInput] = useState('0');
+  const [timeRemaining, setTimeRemaining] = useState(1800);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [calculatorValue, setCalculatorValue] = useState('0');
   const [prevValue, setPrevValue] = useState(null);
   const [operation, setOperation] = useState(null);
-  const [waitingForOperand, setWaitingForOperand] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [hasPaid, setHasPaid] = useState(true);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
-  const inputDigit = (digit) => {
-    if (waitingForOperand) {
-      setCalcInput(String(digit));
-      setWaitingForOperand(false);
-    } else {
-      setCalcInput(calcInput === '0' ? String(digit) : calcInput + digit);
-    }
-  };
+  const navigate = useNavigate();
 
-  const inputDecimal = () => {
-    if (waitingForOperand) {
-      setCalcInput('0.');
-      setWaitingForOperand(false);
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login', { state: { from: 'exam' } });
       return;
     }
 
-    if (!calcInput.includes('.')) {
-      setCalcInput(calcInput + '.');
+    setIsLoggedIn(true);
+    fetchSubjects();
+  }, []);
+
+  const fetchSubjects = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API_BASE_URL}/subjects`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSubjects(res.data.data || []);
+    } catch (err) {
+      setError('Failed to load subjects');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const clearAll = () => {
-    setCalcInput('0');
-    setPrevValue(null);
-    setOperation(null);
-    setWaitingForOperand(false);
-  };
+  const startExam = async (subjectId) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const res = await axios.get(
+        `${API_BASE_URL}/exams/start?subject=${subjectId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-  const performOperation = (nextOperation) => {
-    const inputValue = parseFloat(calcInput);
-
-    if (prevValue === null) {
-      setPrevValue(inputValue);
-    } else if (operation) {
-      const currentValue = prevValue || 0;
-      let newValue = 0;
-
-      switch (operation) {
-        case '+':
-          newValue = currentValue + inputValue;
-          break;
-        case '-':
-          newValue = currentValue - inputValue;
-          break;
-        case '×':
-          newValue = currentValue * inputValue;
-          break;
-        case '÷':
-          newValue = currentValue / inputValue;
-          break;
-        case '%':
-          newValue = currentValue % inputValue;
-          break;
-        default:
-          newValue = inputValue;
+      const data = res.data.data;
+      if (!data.questions || data.questions.length === 0) {
+        throw new Error('No questions available for this subject yet.');
       }
 
-      setPrevValue(newValue);
-      setCalcInput(String(newValue));
+      setExamId(data.exam.id);
+      setQuestions(data.questions);
+      setSelectedOptions(Array(data.questions.length).fill(null));
+      setSelectedSubject(subjects.find(s => s.id === subjectId));
+      setQuizCompleted(false);
+      setQuizResults(null);
+      setTimeRemaining(1800);
+      setCurrentIndex(0);
+      setShowCalculator(false);
+      setHasPaid(true);
+    } catch (err) {
+      if (err.response?.status === 403) {
+        setHasPaid(false);
+      } else {
+        setError(err.message || 'Could not start exam. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
-
-    setWaitingForOperand(true);
-    setOperation(nextOperation);
   };
 
-  const handleEquals = () => {
-    if (!operation || prevValue === null) return;
-    
-    performOperation(null);
-    setOperation(null);
-    setPrevValue(null);
+  const initializePayment = async () => {
+    try {
+      setPaymentLoading(true);
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        `${API_BASE_URL}/subscriptions`,
+        { 
+          callback_url: `${window.location.origin}/exam`,
+          amount: 1000, 
+          email: localStorage.getItem('userEmail')
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.data?.authorization_url) {
+        window.location.href = res.data.data.authorization_url;
+      } else {
+        setError('Failed to initialize payment');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Payment failed.');
+    } finally {
+      setPaymentLoading(false);
+    }
   };
+
+  const handleCalculatorInput = (value) => {
+    if (value === 'C') {
+      setCalculatorValue('0');
+      setPrevValue(null);
+      setOperation(null);
+    } else if (value === '=') {
+      if (!operation) return;
+      const current = parseFloat(calculatorValue);
+      const previous = parseFloat(prevValue);
+      let result;
+      switch(operation) {
+        case '+': result = previous + current; break;
+        case '-': result = previous - current; break;
+        case '×': result = previous * current; break;
+        case '÷': result = previous / current; break;
+        default: return;
+      }
+      setCalculatorValue(result.toString());
+      setPrevValue(null);
+      setOperation(null);
+    } else if (['+', '-', '×', '÷'].includes(value)) {
+      setPrevValue(calculatorValue);
+      setOperation(value);
+      setCalculatorValue('0');
+    } else {
+      setCalculatorValue(calculatorValue === '0' ? value : calculatorValue + value);
+    }
+  };
+
+  const fireConfetti = () => {
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b']
+    });
+  };
+
+  useEffect(() => {
+    if (!selectedSubject || quizCompleted) return;
+    const timer = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          submitQuiz();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [selectedSubject, quizCompleted]);
+
+  const questionOptionsMap = useMemo(() => {
+    const map = {};
+    questions.forEach(q => {
+      map[q.id] = q.options.reduce((acc, opt) => {
+        acc[opt.id] = opt.optionText;
+        return acc;
+      }, {});
+    });
+    return map;
+  }, [questions]);
+
+  const handleSelect = (index, optionId) => {
+    const updated = [...selectedOptions];
+    updated[index] = optionId;
+    setSelectedOptions(updated);
+  };
+
+  const submitQuiz = async () => {
+    if (!examId) {
+      setError('Exam ID missing.');
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      const token = localStorage.getItem('token');
+      const answers = questions.map((q, i) => ({
+        question_id: q.id,
+        selected_option_id: selectedOptions[i],
+      })).filter(a => a.selected_option_id !== null);
+
+      await axios.post(
+        `${API_BASE_URL}/exams/${examId}/submit`,
+        { answers },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const res = await axios.get(`${API_BASE_URL}/exams/${examId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const examData = res.data.data;
+      const details = (examData.answers || []).map(a => ({
+        questionId: a.question.id,
+        questionText: a.question.questionText,
+        explanation: a.question.explanation || 'No explanation provided.',
+        correctOptionId: a.question.correctOptionId,
+        selectedOptionId: a.selectedOption?.id,
+        selectedOptionText: a.selectedOption?.optionText || 'Not answered',
+        correctOptionText: questionOptionsMap[a.question.id]?.[a.question.correctOptionId] || 'N/A',
+        isCorrect: a.isCorrect === 1,
+      }));
+
+      setQuizResults({
+        total: examData.answers.length,
+        correct: examData.totalScore,
+        percentage: examData.percentage,
+        details,
+      });
+
+      setQuizCompleted(true);
+      if (examData.percentage >= 70) fireConfetti();
+    } catch (err) {
+      setError('Submission failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const restart = () => {
+    setSelectedSubject(null);
+    setExamId(null);
+    setQuestions([]);
+    setSelectedOptions([]);
+    setCurrentIndex(0);
+    setQuizCompleted(false);
+    setQuizResults(null);
+    setTimeRemaining(1800);
+    setError(null);
+    setShowCalculator(false);
+    setHasPaid(true);
+  };
+
+  const formatTime = s => {
+    const minutes = Math.floor(s / 60);
+    const seconds = s % 60;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center p-8">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
+          <p className="text-gray-600">Loading exam content...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center p-8 max-w-md">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-3">Error</h3>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={restart}
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user is logged in
+  if (!isLoggedIn) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center p-8 max-w-md">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-3">Login Required</h3>
+          <p className="text-gray-600 mb-6">You need to be logged in to access exam mode.</p>
+          <button
+            onClick={() => navigate('/login', { state: { from: 'exam' } })}
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Payment required screen
+  if (!hasPaid) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center p-8 max-w-md">
+          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FaLock className="text-blue-600 text-2xl" />
+          </div>
+         
+          <h3 className="text-xl font-semibold text-gray-800 mb-3">Payment Required</h3>
+<p className="text-gray-600 mb-6">
+  Access to exams requires a one-time monthly payment of ₦1000.
+</p>
+
+          <button
+            onClick={initializePayment}
+            disabled={paymentLoading}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium w-full hover:bg-indigo-700 transition-colors disabled:opacity-70"
+          >
+            {paymentLoading ? 'Processing...' : 'Pay ₦1000 to Continue'}
+          </button>
+          
+          {error && (
+            <p className="text-red-500 mt-4 text-sm">{error}</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Subjects loading screen
+  if (hasPaid && subjects.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center p-8 max-w-md">
+          <h3 className="text-xl font-semibold text-gray-800 mb-3">Loading Subjects...</h3>
+          <p className="text-gray-600">Please wait while we load your available courses.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Subject selection
+  if (!selectedSubject && !quizCompleted) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto mt-11">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">
+              Exam Mode
+            </h1>
+            <p className="text-gray-600">
+              Select a subject to begin your exam
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {subjects.map((subject) => (
+              <motion.button
+                key={subject.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => startExam(subject.id)}
+                className="bg-white p-5 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-left border border-gray-100"
+              >
+                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-3 text-xl font-bold text-indigo-600">
+                  {subject.name.charAt(0)}
+                </div>
+                <h3 className="font-semibold text-gray-800 mb-1">{subject.name}</h3>
+                <p className="text-xs text-gray-500">Click to start exam</p>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No questions available
+  if (selectedSubject && questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-md mx-auto bg-white  rounded-xl shadow-sm p-8 text-center">
+          <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">No Questions Available</h2>
+          <p className="text-gray-600 mb-6">
+            There are currently no questions available for {selectedSubject.name}.
+            Please check back later or select another subject.
+          </p>
+          <button
+            onClick={restart}
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center mx-auto"
+          >
+            <FaArrowLeft className="mr-2" /> Back to Subjects
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Results screen
+  if (quizCompleted && quizResults) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="p-8 text-center">
+            <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Exam Completed!</h2>
+            <p className="text-lg text-gray-600 mb-6">
+              You scored <span className="font-bold text-indigo-600">{quizResults.percentage}%</span> in {selectedSubject.name}
+            </p>
+            
+            <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden mb-8">
+              <div 
+                className={`h-full rounded-full ${
+                  quizResults.percentage >= 70 
+                    ? 'bg-green-500' 
+                    : 'bg-yellow-500'
+                }`}
+                style={{ width: `${quizResults.percentage}%` }}
+              />
+            </div>
+            
+            <div className="space-y-4 mb-8">
+              {quizResults.details.map((d, i) => (
+                <div
+                  key={i}
+                  className={`p-4 rounded-lg border-l-4 ${
+                    d.isCorrect 
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-red-500 bg-red-50'
+                  }`}
+                >
+                  <p className="font-medium text-gray-800 mb-2">
+                    <span className="font-bold">Q{i + 1}:</span> {d.questionText}
+                  </p>
+                  <p className={`text-sm mb-1 ${
+                    d.isCorrect ? 'text-green-700' : 'text-red-700'
+                  }`}>
+                    <span className="font-medium">Your answer:</span> {d.selectedOptionText}
+                  </p>
+                  {!d.isCorrect && (
+                    <p className="text-green-700 mb-2">
+                      <span className="font-medium">Correct answer:</span> {d.correctOptionText}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-600 italic">
+                    <span className="font-medium">Explanation:</span> {d.explanation}
+                  </p>
+                </div>
+              ))}
+            </div>
+            
+            <button
+              onClick={restart}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+            >
+              Take Another Exam
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Exam in progress
+  const question = questions[currentIndex];
+  const selectedId = selectedOptions[currentIndex];
 
   return (
-    <div className={`
-      ${isMobile ? 
-        'fixed inset-0 z-50 bg-white p-4 flex flex-col' : 
-        'w-full md:w-1/3 bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in'}
-    `}>
-      {isMobile && (
-        <div className="bg-blue-300 p-4 text-white">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold">Calculator</h2>
+    <div className="min-h-screen bg-gray-50 p-4 relative">
+      {/* Calculator toggle button */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setShowCalculator(!showCalculator)}
+        className="fixed top-24 right-6 p-3 bg-indigo-600 text-white rounded-full shadow-lg z-20"
+        aria-label="Calculator"
+      >
+        <FaCalculator size={20} />
+      </motion.button>
+
+      {/* Calculator popup */}
+      <AnimatePresence>
+        {showCalculator && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed top-32 right-6 w-72 bg-white rounded-lg shadow-xl z-10 border border-gray-200"
+          >
+            <div className="p-3 bg-indigo-600 text-white text-right text-xl font-mono h-14 flex items-center justify-end overflow-x-auto">
+              {calculatorValue}
+            </div>
+            <div className="grid grid-cols-4 gap-1 p-2 bg-gray-50">
+              {['C', '÷', '×', '-'].map((btn) => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalculatorInput(btn)}
+                  className={`p-3 text-lg font-medium rounded ${
+                    ['C'].includes(btn)
+                      ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                      : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+                  }`}
+                >
+                  {btn}
+                </button>
+              ))}
+              {[7, 8, 9, '+'].map((btn) => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalculatorInput(btn.toString())}
+                  className={`p-3 text-lg font-medium rounded ${
+                    ['+'].includes(btn.toString())
+                      ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  }`}
+                >
+                  {btn}
+                </button>
+              ))}
+              {[4, 5, 6, '='].map((btn) => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalculatorInput(btn.toString())}
+                  className={`p-3 text-lg font-medium rounded ${
+                    ['='].includes(btn.toString())
+                      ? 'bg-green-100 text-green-600 hover:bg-green-200 row-span-2 h-full'
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  }`}
+                >
+                  {btn}
+                </button>
+              ))}
+              {[1, 2, 3].map((btn) => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalculatorInput(btn.toString())}
+                  className="p-3 text-lg font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 rounded"
+                >
+                  {btn}
+                </button>
+              ))}
+              {[0, '.'].map((btn) => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalculatorInput(btn.toString())}
+                  className="p-3 text-lg font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 rounded"
+                >
+                  {btn}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="max-w-3xl mx-auto mt-15 bg-white rounded-lg shadow-sm overflow-hidden">
+        {/* Header with timer */}
+        <div className="p-4 bg-indigo-600 text-white">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div className="mb-2 sm:mb-0">
+              <h3 className="font-semibold">{selectedSubject?.name}</h3>
+              <p className="text-indigo-100 text-xs sm:text-sm">
+                Question {currentIndex + 1} of {questions.length}
+              </p>
+            </div>
+            <div className="bg-black bg-opacity-20 px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+              Time: {formatTime(timeRemaining)}
+            </div>
+          </div>
+        </div>
+        
+        {/* Question content */}
+        <div className="p-4 sm:p-6">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">
+            {question?.questionText}
+          </h3>
+          
+          <div className="space-y-2 sm:space-y-3">
+            {question?.options.map((opt, i) => (
+              <button
+                key={opt.id}
+                onClick={() => handleSelect(currentIndex, opt.id)}
+                className={`w-full text-left p-3 sm:p-4 rounded-lg border transition-all ${
+                  selectedId === opt.id
+                    ? 'border-indigo-500 bg-indigo-50'
+                    : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                }`}
+              >
+                <div className="flex items-center">
+                  <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 mr-2 sm:mr-3 flex-shrink-0 flex items-center justify-center ${
+                    selectedId === opt.id 
+                      ? 'border-indigo-500 bg-indigo-500' 
+                      : 'border-gray-300'
+                  }`}>
+                    {selectedId === opt.id && (
+                      <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-sm sm:text-base">{opt.optionText}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+          
+          {/* Navigation buttons */}
+          <div className="flex justify-between mt-6 sm:mt-8">
             <button
-              onClick={onClose}
-              className="p-1 rounded-full hover:bg-blue-400 transition-colors"
+              onClick={() => setCurrentIndex(i => Math.max(0, i - 1))}
+              disabled={currentIndex === 0}
+              className={`px-4 sm:px-6 py-2 rounded-lg font-medium text-sm sm:text-base ${
+                currentIndex === 0
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
             >
-              <FiX size={20} />
+              Previous
             </button>
+            
+            {currentIndex < questions.length - 1 ? (
+              <button
+                onClick={() => setCurrentIndex(i => i + 1)}
+                disabled={selectedId === null}
+                className={`px-4 sm:px-6 py-2 rounded-lg font-medium text-white text-sm sm:text-base ${
+                  selectedId === null
+                    ? 'bg-indigo-300 cursor-not-allowed'
+                    : 'bg-indigo-600 hover:bg-indigo-700'
+                }`}
+              >
+                Next
+              </button>
+            ) : (
+              <button
+                onClick={submitQuiz}
+                disabled={selectedId === null || isSubmitting}
+                className={`px-4 sm:px-6 py-2 rounded-lg font-medium text-white text-sm sm:text-base ${
+                  selectedId === null || isSubmitting
+                    ? 'bg-green-300 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit'}
+              </button>
+            )}
           </div>
-        </div>
-      )}
-      {!isMobile && (
-        <div className="bg-blue-300 p-4 text-white">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold">Calculator</h2>
-            <button
-              onClick={onClose}
-              className="p-1 rounded-full hover:bg-blue-400 transition-colors"
-            >
-              <FiX size={20} />
-            </button>
-          </div>
-        </div>
-      )}
-      <div className={`p-4 ${isMobile ? 'flex-1' : ''}`}>
-        <div className="bg-blue-50 rounded-lg p-3 mb-4">
-          <div className="text-right text-2xl sm:text-3xl font-semibold text-blue-800 overflow-x-auto">
-            {calcInput}
-          </div>
-        </div>
-        <div className="grid grid-cols-4 gap-2 sm:gap-3">
-          <button
-            onClick={clearAll}
-            className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 sm:p-3 rounded-lg font-medium transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            AC
-          </button>
-          <button
-            onClick={() => performOperation('%')}
-            className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 sm:p-3 rounded-lg transition-colors active:scale-95"
-          >
-            <FiPercent className="mx-auto text-sm sm:text-base" />
-          </button>
-          <button
-            onClick={() => performOperation('÷')}
-            className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 sm:p-3 rounded-lg transition-colors active:scale-95"
-          >
-            <FiDivide className="mx-auto text-sm sm:text-base" />
-          </button>
-          <button
-            onClick={() => performOperation('×')}
-            className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 sm:p-3 rounded-lg transition-colors active:scale-95"
-          >
-            <FiX className="mx-auto text-sm sm:text-base" />
-          </button>
-
-          <button
-            onClick={() => inputDigit(7)}
-            className="bg-gray-100 hover:bg-gray-200 p-2 sm:p-3 rounded-lg font-medium transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            7
-          </button>
-          <button
-            onClick={() => inputDigit(8)}
-            className="bg-gray-100 hover:bg-gray-200 p-2 sm:p-3 rounded-lg font-medium transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            8
-          </button>
-          <button
-            onClick={() => inputDigit(9)}
-            className="bg-gray-100 hover:bg-gray-200 p-2 sm:p-3 rounded-lg font-medium transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            9
-          </button>
-          <button
-            onClick={() => performOperation('-')}
-            className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 sm:p-3 rounded-lg transition-colors active:scale-95"
-          >
-            <FiMinus className="mx-auto text-sm sm:text-base" />
-          </button>
-
-          <button
-            onClick={() => inputDigit(4)}
-            className="bg-gray-100 hover:bg-gray-200 p-2 sm:p-3 rounded-lg font-medium transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            4
-          </button>
-          <button
-            onClick={() => inputDigit(5)}
-            className="bg-gray-100 hover:bg-gray-200 p-2 sm:p-3 rounded-lg font-medium transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            5
-          </button>
-          <button
-            onClick={() => inputDigit(6)}
-            className="bg-gray-100 hover:bg-gray-200 p-2 sm:p-3 rounded-lg font-medium transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            6
-          </button>
-          <button
-            onClick={() => performOperation('+')}
-            className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 sm:p-3 rounded-lg transition-colors active:scale-95"
-          >
-            <FiPlus className="mx-auto text-sm sm:text-base" />
-          </button>
-
-          <button
-            onClick={() => inputDigit(1)}
-            className="bg-gray-100 hover:bg-gray-200 p-2 sm:p-3 rounded-lg font-medium transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            1
-          </button>
-          <button
-            onClick={() => inputDigit(2)}
-            className="bg-gray-100 hover:bg-gray-200 p-2 sm:p-3 rounded-lg font-medium transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            2
-          </button>
-          <button
-            onClick={() => inputDigit(3)}
-            className="bg-gray-100 hover:bg-gray-200 p-2 sm:p-3 rounded-lg font-medium transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            3
-          </button>
-          <button
-            onClick={handleEquals}
-            className="bg-blue-300 hover:bg-blue-400 text-white p-2 sm:p-3 rounded-lg row-span-2 transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            =
-          </button>
-
-          <button
-            onClick={() => inputDigit(0)}
-            className="bg-gray-100 hover:bg-gray-200 p-2 sm:p-3 rounded-lg font-medium col-span-2 transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            0
-          </button>
-          <button
-            onClick={inputDecimal}
-            className="bg-gray-100 hover:bg-gray-200 p-2 sm:p-3 rounded-lg font-medium transition-colors active:scale-95 text-sm sm:text-base"
-          >
-            .
-          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default QuizApp;
+export default ExamMode;

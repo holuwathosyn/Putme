@@ -19,6 +19,22 @@ const ChangePassword = () => {
     }
   }, []);
 
+  const validatePassword = (password) => {
+    if (password.length < 8) {
+      return "Password must be at least 8 characters";
+    }
+    
+    if (/^\d+$/.test(password)) {
+      return "Password cannot be only numbers";
+    }
+    
+    if (!/[a-zA-Z]/.test(password)) {
+      return "Password must contain at least one letter";
+    }
+    
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -27,8 +43,9 @@ const ChangePassword = () => {
       return;
     }
 
-    if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters');
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      toast.error(passwordError);
       return;
     }
 
@@ -59,18 +76,16 @@ const ChangePassword = () => {
         source.cancel('Request timed out!');
       }, 15000);
 
-      await axios.post(
+      const response = await axios.post(
         'https://server.mypostutme.com/api/auth/change-password',
         {
-          current_password: currentPassword,
-          password: newPassword,
-          password_confirmation: confirmPassword,
+          old_password: currentPassword,
+          new_password: newPassword
         },
         {
           headers: {
             Authorization: `Bearer ${cleanedToken}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            'Content-Type': 'application/json'
           },
           cancelToken: source.token,
         }
@@ -90,9 +105,7 @@ const ChangePassword = () => {
       } else if (err.response) {
         switch (err.response.status) {
           case 401:
-            toast.error('Session expired. Please login again.');
-            localStorage.removeItem('token');
-            setTokenValid(false);
+            toast.error('Invalid current password or session expired');
             break;
           case 400:
             toast.error(err.response.data?.message || 'Invalid request format');
@@ -144,7 +157,6 @@ const ChangePassword = () => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               placeholder="Current password"
               required
-              minLength="8"
             />
           </div>
 
@@ -158,10 +170,12 @@ const ChangePassword = () => {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-              placeholder="New password (min 8 characters)"
+              placeholder="New password (min 8 characters with letters)"
               required
-              minLength="8"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Password must be at least 8 characters and contain letters
+            </p>
           </div>
 
           <div>
@@ -176,7 +190,6 @@ const ChangePassword = () => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               placeholder="Confirm new password"
               required
-              minLength="8"
             />
           </div>
 

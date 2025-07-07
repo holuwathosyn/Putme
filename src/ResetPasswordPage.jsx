@@ -14,6 +14,30 @@ const ResetPasswordPage = () => {
   const queryParams = new URLSearchParams(location.search);
   const token = queryParams.get('token');
 
+  const validatePassword = (password) => {
+    if (password.length < 8) {
+      return "Password must be at least 8 characters";
+    }
+    
+    if (!/[a-z]/.test(password)) {
+      return "Password must contain at least one lowercase letter";
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one uppercase letter";
+    }
+    
+    if (!/[0-9]/.test(password)) {
+      return "Password must contain at least one number";
+    }
+    
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return "Password must contain at least one special character";
+    }
+    
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -27,8 +51,9 @@ const ResetPasswordPage = () => {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      toast.error(passwordError);
       return;
     }
 
@@ -66,7 +91,14 @@ const ResetPasswordPage = () => {
       <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8">
         <h2 className="text-3xl font-bold text-center text-blue-600 mb-4">Reset Password</h2>
         <p className="text-center text-gray-500 mb-6">
-          Enter your new password below.
+          Password must contain:
+          <ul className="list-disc list-inside text-sm text-left mt-2">
+            <li>At least 8 characters</li>
+            <li>One uppercase letter</li>
+            <li>One lowercase letter</li>
+            <li>One number</li>
+            <li>One special character</li>
+          </ul>
         </p>
 
         {!token ? (
@@ -85,7 +117,7 @@ const ResetPasswordPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                placeholder="At least 6 characters"
+                placeholder="Enter a strong password"
                 disabled={loading}
                 required
               />

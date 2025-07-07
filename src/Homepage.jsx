@@ -13,6 +13,7 @@ import {
   FaClipboardCheck,
   FaChartLine
 } from "react-icons/fa";
+import { Link } from 'react-router-dom';
 
 // Data
 const ChooseUs = [
@@ -531,10 +532,11 @@ const HomePage = () => {
             <span>Instant access</span>
           </li>
         </ul>
-        
+        <Link to="/Testmode">
         <button className="w-full py-3 px-6 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200">
           Get Started
         </button>
+        </Link>
       </div>
 
       {/* Premium Plan */}
@@ -582,10 +584,11 @@ const HomePage = () => {
             <span>Student-friendly pricing</span>
           </li>
         </ul>
-        
+        <Link to="/ExamMode">
         <button className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium text-white transition-colors duration-200 shadow-md hover:shadow-lg">
         Try Exam Mode
         </button>
+        </Link>
       </div>
     </div>
 
