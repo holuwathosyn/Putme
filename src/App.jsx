@@ -13,7 +13,11 @@ import UpdatePassword from "./UpdatePassword";
 import TestMode from "./Testmode";
 import ExamMode from "./Exammode";
 import ResetPasswordPage  from "./ResetPasswordPage";
-import StudentDashboard from "./StudentDashboard"
+import StudentDashboard from "./StudentDashboard";
+import PdfUploader from "./UploadPdf";
+import BuyPdf from "./BuyPast";
+import  FaQs from "./Faq";
+import ExamLandingPage from "./ExamLandingPage";
 export default function App() {
   return (
     <Router>
@@ -26,13 +30,15 @@ export default function App() {
           <Route path="/AddCourses" element={<AddCourses />} />
           <Route path="/RegistrationPage" element={<RegistrationPage />} />
             <Route path="/login" element={<LoginPage/>}/>
+            <Route path="/ExamLandingPage" element={<ExamLandingPage />} />
           <Route path="/ContactPage" element={<ContactPage/>}/>
           <Route path="/UpdatePassword" element={<UpdatePassword/>}  />
           <Route path="/TestMode" element={<TestMode  />} />
 <Route path="/StudentDashboard" element={<StudentDashboard  />}  />
 
-
-
+<Route path="/PdfUploader" element={<PdfUploader />} />
+<Route path="/BuyPdf" element={<BuyPdf />} />
+<Route path="/FAQs" element={<FaQs />} />
           <Route path="/ExamMode" element={<ExamMode  />} />
           <Route path="/ForgotPasswordPage" element={<ForgotPasswordPage />} />
      

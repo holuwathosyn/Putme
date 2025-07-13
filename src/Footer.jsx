@@ -6,7 +6,7 @@ export default function Footer() {
 
   const socialLinks = [
     {
-      href: "https://facebook.com",
+      href: "https://www.facebook.com/profile.php?id=61577785904580&mibextid=LQQJ4d",
       label: "Facebook",
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -24,7 +24,7 @@ export default function Footer() {
       ),
     },
     {
-      href: "https://instagram.com",
+      href: "https://www.instagram.com/mypostutme?igsh=bjdmZHlqYzViOHE1",
       label: "Instagram",
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -111,11 +111,11 @@ export default function Footer() {
                 Lagos, Nigeria
               </li>
               <li>
-                <a href="mailto:info@mypostutme.com" className="text-gray-600 hover:text-blue-600 transition-colors duration-300 flex items-center">
+                <a href="mailto:support@mypostutme.com" className="text-gray-600 hover:text-blue-600 transition-colors duration-300 flex items-center">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                   </svg>
-                  info@mypostutme.com
+                  support@mypostutme.com
                 </a>
               </li>
               <li>

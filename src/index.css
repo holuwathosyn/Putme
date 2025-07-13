@@ -39,7 +39,15 @@
             font-family: "second";
             src: url("./assets/the_students_teacher.zip");
         }
+        .mila{
+            position: relative;
+            top: 60px;
+        }
         .mina{
             position: relative;
             top: 50px;
+        }
+        .ffff{
+            position: relative;
+            top: 70px;
         }

@@ -3,18 +3,15 @@ import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
 
 const registerUser = async (formData) => {
-  const res = await fetch(import.meta.env.VITE_API_REG, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData)
-  });
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || 'Registration failed');
+  try {
+    const { data } = await axios.post(import.meta.env.VITE_API_REG, formData);
+    return data;
+  } catch (err) {
+    throw new Error(err.response?.data?.message || 'Registration failed');
   }
-  return res.json();
 };
 
 const RegistrationPage = () => {

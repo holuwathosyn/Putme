@@ -5,19 +5,20 @@ import 'react-toastify/dist/ReactToastify.css';
 import { 
   FaCrown, FaSignOutAlt, FaShoppingCart,
   FaUser, FaClipboardList, FaGraduationCap, 
-  FaHistory, FaBolt
+  FaHistory, FaBolt, FaChevronDown, FaKey
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { GiBrain } from 'react-icons/gi';
 import { MdOutlineDashboardCustomize } from 'react-icons/md';
+import axios from 'axios';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const [daysRemaining, setDaysRemaining] = useState(30);
   const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(true);
   const [exams, setExams] = useState([]);
   const [userDetails, setUserDetails] = useState(null);
+  const [showExams, setShowExams] = useState(false);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -53,6 +54,22 @@ const StudentDashboard = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const fetchTotalExam = async () => {
+      try {
+        const getTotalExam = await axios.get(`${API_BASE_URL}users/exams`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        setExams(getTotalExam.data.data);
+      } catch (err) {
+        console.error('Error fetching total exams:', err);
+      }
+    };
+    fetchTotalExam();
+  }, []);
+
   const handleLogout = async () => {
     try {
       setLoading(true);
@@ -79,6 +96,29 @@ const StudentDashboard = () => {
 
   const handlePurchase = () => {
     toast.info('Redirecting to past questions store...');
+    navigate('/BuyPdf');
+  };
+
+  const handleUpdatePassword = () => {
+    navigate('/UpdatePassword');
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'In Progress';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getScoreColor = (percentage) => {
+    if (percentage >= 70) return 'text-green-500';
+    if (percentage >= 50) return 'text-yellow-500';
+    return 'text-red-500';
   };
 
   const containerVariants = {
@@ -108,54 +148,55 @@ const StudentDashboard = () => {
     }
   };
 
-  // Color scheme
-  const colors = {
-    primary: 'bg-gradient-to-r from-indigo-600 to-purple-600',
-    secondary: 'bg-gradient-to-r from-blue-500 to-cyan-500',
-    accent: 'bg-gradient-to-r from-amber-500 to-orange-500'
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-4 md:p-6">
+    <div className=" min-h-screen bg-gray-50 p-4 md:p-6">
       <motion.div
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="max-w-7xl mx-auto"
+        className="
+        mt-16 max-w-6xl mx-auto"
       >
         {/* Header */}
-        <motion.div variants={itemVariants} className="flex mt-14 flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <motion.div 
-            className={`flex items-center gap-3 ${colors.primary} text-white px-6 py-3 rounded-xl shadow-lg`}
-            whileHover={{ scale: 1.02 }}
-          >
-            <FaGraduationCap className="text-2xl" />
-            <h1 className="text-2xl md:text-3xl font-bold">Student Dashboard</h1>
-          </motion.div>
+        <motion.div 
+          variants={itemVariants} 
+          className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-lg bg-indigo-600 text-white">
+              <FaGraduationCap className="text-2xl" />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Student Dashboard</h1>
+          </div>
           
           <div className="flex gap-3">
+            <motion.button
+              onClick={handleUpdatePassword}
+              className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg shadow"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <FaKey /> <span className="hidden sm:inline">Update Password</span>
+            </motion.button>
+            
             {isPremium && (
               <motion.div 
-                className="flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-600 text-white px-4 py-2 rounded-full shadow-md"
+                className="flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-600 text-white px-4 py-2 rounded-full shadow"
                 initial={{ scale: 0.9 }}
                 animate={{ scale: 1 }}
                 transition={{ repeat: Infinity, repeatType: "reverse", duration: 1.5 }}
               >
                 <FaCrown className="text-white" />
-                <span>Premium Member</span>
-                <span className="ml-2 bg-white text-amber-600 text-xs px-2 py-1 rounded-full font-bold">
-                  {daysRemaining}d left
-                </span>
               </motion.div>
             )}
             
             <motion.button
               onClick={handleLogout}
-              className="flex items-center gap-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white px-4 py-2 rounded-lg shadow-md"
+              className="flex items-center gap-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white px-4 py-2 rounded-lg shadow"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <FaSignOutAlt /> Logout
+              <FaSignOutAlt /> <span className="hidden sm:inline">Logout</span>
             </motion.button>
           </div>
         </motion.div>
@@ -163,12 +204,12 @@ const StudentDashboard = () => {
         {/* User Greeting */}
         <motion.div 
           variants={itemVariants}
-          className={`${colors.secondary} rounded-xl shadow-xl p-6 mb-8 text-white`}
+          className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl shadow p-6 mb-8 text-white"
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h2 className="text-2xl font-bold mb-1">
-                Welcome back, {userDetails?.name || localStorage.getItem('email') || 'Student'}!
+                Welcome back, {userDetails?.name || 'Student'}!
               </h2>
               <p className="text-blue-100">Track your learning progress and analytics</p>
             </div>
@@ -190,7 +231,7 @@ const StudentDashboard = () => {
         >
           {/* My Exams Card */}
           <motion.div 
-            className="bg-white p-5 rounded-xl shadow-lg border-l-4 border-purple-500"
+            className="bg-white p-5 rounded-xl shadow border border-gray-200"
             variants={itemVariants}
             whileHover="hover"
           >
@@ -204,15 +245,20 @@ const StudentDashboard = () => {
               <p className="text-4xl font-bold text-gray-800 mb-1">{exams.length}</p>
               <p className="text-sm text-gray-500">Total exams taken</p>
             </div>
-            <div className="mt-4 flex justify-between items-center">
-            
-              <FaHistory className="text-purple-400" />
+            <div className="mt-4 flex justify-end">
+              <button 
+                onClick={() => setShowExams(!showExams)}
+                className="text-sm flex items-center gap-1 text-indigo-600 hover:text-indigo-800"
+              >
+                {showExams ? 'Hide exams' : 'View exams'} 
+                <FaChevronDown className={`transition-transform ${showExams ? 'rotate-180' : ''}`} />
+              </button>
             </div>
           </motion.div>
 
           {/* Quick Actions Card */}
           <motion.div 
-            className="bg-white p-5 rounded-xl shadow-lg border-l-4 border-amber-500"
+            className="bg-white p-5 rounded-xl shadow border border-gray-200"
             variants={itemVariants}
             whileHover="hover"
           >
@@ -232,25 +278,84 @@ const StudentDashboard = () => {
                 <FaShoppingCart /> Get Past Questions
               </motion.button>
               <Link to="/ExamMode">
-              <motion.button
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg shadow"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <MdOutlineDashboardCustomize /> Custom Test
-              </motion.button></Link>
+                <motion.button
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg shadow"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <MdOutlineDashboardCustomize /> Start Exam 
+                </motion.button>
+              </Link>
             </div>
           </motion.div>
         </motion.div>
 
+        {/* Exam List Section - Only shown when expanded */}
+        {showExams && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            transition={{ duration: 0.3 }}
+            className="bg-white rounded-xl shadow border border-gray-200 p-6 mb-8 overflow-hidden"
+          >
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Your Exam History</h3>
+            
+            {exams.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No exams taken yet</p>
+                <Link to="/ExamMode">
+                  <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition">
+                    Start Your First Exam
+                  </button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {exams.map((exam) => (
+                  <div 
+                    key={exam.id}
+                    className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-gray-800">
+                          {exam.subject.charAt(0).toUpperCase() + exam.subject.slice(1)} Exam
+                        </h4>
+                        <p className="text-sm text-gray-500">
+                          {formatDate(exam.startedAt)} • {exam.totalQuestions} questions
+                        </p>
+                      </div>
+                      <div className={`text-lg font-semibold ${getScoreColor(exam.percentage)}`}>
+                        {exam.completedAt ? `${exam.percentage}%` : 'In Progress'}
+                      </div>
+                    </div>
+                    {exam.completedAt && (
+                      <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-500">Correct Answers</p>
+                          <p className="font-medium">{exam.correctAnswers}/{exam.totalQuestions}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Completed At</p>
+                          <p className="font-medium">{formatDate(exam.completedAt)}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {/* User Profile Section */}
         <motion.div 
           variants={itemVariants}
-          className="bg-white rounded-xl shadow-lg p-6 mb-8"
+          className="bg-white rounded-xl shadow border border-gray-200 p-6 mb-8"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-              <FaUser className="text-blue-500" /> Profile
+              <FaUser className="text-blue-500" /> Profile Information
             </h3>
             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
               <span className="text-blue-600 font-bold">
@@ -260,24 +365,24 @@ const StudentDashboard = () => {
           </div>
           
           {userDetails ? (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <p className="text-sm text-gray-500">Full Name</p>
-                <p className="text-gray-800 font-medium">{userDetails.name}</p>
+                <p className="text-sm text-gray-500 mb-1">Full Name</p>
+                <p className="font-medium text-gray-800">{userDetails.name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="text-gray-800 font-medium">{userDetails.email}</p>
+                <p className="text-sm text-gray-500 mb-1">Email</p>
+                <p className="font-medium text-gray-800">{userDetails.email}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Account Status</p>
+                <p className="text-sm text-gray-500 mb-1"> Status</p>
                 <p className={`font-medium ${isPremium ? 'text-amber-500' : 'text-gray-800'}`}>
-                  {isPremium ? 'Subscribed' : 'Not Subscribed'}
+                  {isPremium ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Member Since</p>
-                <p className="text-gray-800 font-medium">
+                <p className="text-sm text-gray-500 mb-1">Member Since</p>
+                <p className="font-medium text-gray-800">
                   {new Date(userDetails.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
@@ -332,7 +437,7 @@ const StudentDashboard = () => {
         pauseOnHover
         toastStyle={{
           borderRadius: '12px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
           padding: '16px',
           fontSize: '14px'
         }}

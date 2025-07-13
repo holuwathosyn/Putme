@@ -72,7 +72,7 @@ const App = () => {
               </button>
               
               <a
-                href="https://wa.me/18444724111"
+                href="https://wa.me/+2348114749523"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto flex items-center justify-center text-green-600 hover:text-green-700 text-sm sm:text-base"

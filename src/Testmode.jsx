@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { Link } from 'react-router-dom';
 
 const QuizApp = () => {
   const [subjects, setSubjects] = useState([]);
@@ -30,7 +31,7 @@ const QuizApp = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const response = await axios.get('https://server.mypostutme.com/api/subjects');
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/subjects`);
         await new Promise(resolve => setTimeout(resolve, 800)); // Smooth delay
         setSubjects(response.data.data || []);
       } catch (err) {
@@ -72,7 +73,7 @@ const QuizApp = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(`https://server.mypostutme.com/api/sample/exam?subject_id=${subjectId}`);
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/sample/exam?subject_id=${subjectId}`);
       await new Promise(resolve => setTimeout(resolve, 500)); // Smooth transition
       setQuestions(response.data.data || []);
       setSelectedSubject(subjects.find(sub => sub.id === subjectId));
@@ -107,7 +108,7 @@ const QuizApp = () => {
         question_id: parseInt(questionId),
         selected_option_id: optionId
       }));
-      const response = await axios.post('https://server.mypostutme.com/api/sample/score', { answers });
+      const response = await axios.post( `${import.meta.env.VITE_API_BASE_URL}/sample/score`, { answers });
       setScore(response.data.data);
       setQuizCompleted(true);
       if (response.data.data.scorePercentage >= 70) {
@@ -353,6 +354,7 @@ const QuizApp = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
+          <Link to="/RegistrationPage">
           <motion.button 
             whileHover={{ 
               scale: 1.02, 
@@ -362,8 +364,9 @@ const QuizApp = () => {
             onClick={restartQuiz}
             className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
           >
-            Take Another Quiz
+         Move to exam mode
           </motion.button>
+          </Link>
         </motion.div>
       </motion.div>
     </div>

@@ -1,35 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   FiUpload, FiPlusCircle, FiMinusCircle, FiCheckCircle, 
-  FiAlertCircle, FiChevronDown 
+  FiAlertCircle, FiChevronDown, FiChevronLeft, FiChevronRight
 } from 'react-icons/fi';
 
 const AdminQuestionUploader = () => {
   const MAX_OPTIONS_PER_QUESTION = 5;
   const INITIAL_QUESTION_COUNT = 10;
   const API_ENDPOINT = import.meta.env.VITE_API_QUESTION;
-
-  const subjects = [
-    { id: 1, name: "English" },
-    { id: 2, name: "Maths" },
-    { id: 3, name: "General paper/Current affairs" },
-    { id: 4, name: "Vocational studies" },
-    { id: 5, name: "Aptitude test" },
-    { id: 6, name: "History" },
-    { id: 7, name: "Government" },
-    { id: 8, name: "Economics" },
-    { id: 9, name: "Accounting" },
-    { id: 10, name: "Crk" },
-    { id: 11, name: "Geography" },
-    { id: 12, name: "Islamic studies" },
-    { id: 13, name: "Literature in English" },
-    { id: 14, name: "Physics" },
-    { id: 15, name: "Biology" },
-    { id: 16, name: "Chemistry" },
-    { id: 17, name: "Music" },
-    { id: 18, name: "French" },
-    { id: 19, name: "Agric" }
-  ];
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const [questions, setQuestions] = useState(
     Array(INITIAL_QUESTION_COUNT).fill().map(() => ({
@@ -40,10 +19,12 @@ const AdminQuestionUploader = () => {
     }))
   );
 
+  const [subjects, setSubjects] = useState([]);
   const [currentSubjectId, setCurrentSubjectId] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [localFeedback, setLocalFeedback] = useState({ message: '', type: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
 
   const current = questions[currentIndex];
   const totalFilledQuestions = questions.filter(q => q.question.trim() !== '' && q.options.length >= 2 && q.answer.trim() !== '').length;
@@ -57,6 +38,33 @@ const AdminQuestionUploader = () => {
       return () => clearTimeout(timer);
     }
   }, [localFeedback]);
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/subjects`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch subjects");
+        }
+        
+        const data = await response.json();
+        setSubjects(Array.isArray(data) ? data : data.data || []);
+      } catch (err) {
+        console.error("Error fetching subjects:", err);
+        setLocalFeedback({ 
+          message: 'Failed to load subjects. Please refresh the page.', 
+          type: 'error' 
+        });
+      }
+    };
+  
+    fetchSubjects();
+  }, [API_BASE_URL]);
 
   const addNewQuestion = () => {
     setQuestions([...questions, {
@@ -163,6 +171,7 @@ const AdminQuestionUploader = () => {
 
   const handleSubjectChange = (value) => {
     setCurrentSubjectId(Number(value));
+    setIsSubjectDropdownOpen(false);
   };
 
   const submitQuestionsToAPI = async (data) => {
@@ -286,75 +295,88 @@ const AdminQuestionUploader = () => {
   };
 
   return (
-    <div className="bg-white shadow-xl rounded-lg p-6 sm:p-8 lg:p-10 font-sans">
-      <h2 className="text-2xl sm:text-3xl  mt-32 font-bold text-gray-800 mb-6 text-center">
-        Question Upload Portal
-      </h2>
+    <div className=''>
+    <div className="   max-w-4xl mx-auto bg-white shadow-lg rounded-xl p-6 font-sans">
+      <h1 className=" mt-20 text-3xl font-bold text-gray-800 mb-8 text-center">
+        Question Upload Page!
+      </h1>
 
-      <div className="mb-6">
-        <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+      {/* Subject Selection */}
+      <div className="mb-8">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           Subject for All Questions *
         </label>
         <div className="relative">
-          <select
-            id="subject"
-            value={currentSubjectId}
-            onChange={(e) => handleSubjectChange(e.target.value)}
-            className="block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200 appearance-none"
-            required
-            disabled={isSubmitting}
+          <button
+            onClick={() => setIsSubjectDropdownOpen(!isSubjectDropdownOpen)}
+            className={`w-full flex justify-between items-center p-4 text-left rounded-xl border ${currentSubjectId ? 'border-blue-500 bg-blue-50' : 'border-gray-300'} transition-all duration-200`}
           >
-            <option value="">Select a subject</option>
-            {subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>
-                {subject.name}
-              </option>
-            ))}
-          </select>
-          <FiChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <span className={currentSubjectId ? "text-blue-700 font-medium" : "text-gray-500"}>
+              {currentSubjectId ? currentSubjectName : "Select a subject"}
+            </span>
+            <FiChevronDown className={`transform ${isSubjectDropdownOpen ? 'rotate-180' : ''} transition-transform duration-200`} />
+          </button>
+          
+          {isSubjectDropdownOpen && (
+            <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-lg py-1 max-h-60 overflow-auto">
+              {subjects.map((subject) => (
+                <button
+                  key={subject.id}
+                  onClick={() => handleSubjectChange(subject.id)}
+                  className={`w-full text-left px-4 py-3 hover:bg-gray-100 ${currentSubjectId === subject.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}`}
+                >
+                  {subject.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         {totalFilledQuestions > 0 && !currentSubjectId && (
           <p className="mt-2 text-sm text-red-600">Please select a subject before continuing</p>
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-        <div className="text-xl font-semibold text-gray-700 mb-4 sm:mb-0">
-          <div>
-            Question <span className="text-blue-600">{currentIndex + 1}</span> of {' '}
-            <span className="text-gray-500">{questions.length}</span>
-            {totalFilledQuestions > 0 && (
-              <span className="ml-3 text-sm text-gray-500">({totalFilledQuestions} ready to submit)</span>
-            )}
-          </div>
-          {currentSubjectId && (
-            <div className="mt-2 text-lg font-medium text-indigo-700">
-              Subject: {currentSubjectName}
-            </div>
-          )}
-        </div>
-
-        <div className="flex space-x-2">
+      {/* Question Navigation */}
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+        <div className="flex items-center gap-4">
           <button
-            type="button"
             onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
             disabled={currentIndex === 0 || isSubmitting}
-            className={`p-2 rounded-full ${currentIndex === 0 ? 'text-gray-400' : 'text-blue-600 hover:bg-blue-50'}`}
+            className={`p-3 rounded-full ${currentIndex === 0 ? 'text-gray-400' : 'text-blue-600 hover:bg-blue-50'} transition-colors`}
           >
-            Previous
+            <FiChevronLeft size={24} />
           </button>
+          
+          <div className="text-center">
+            <div className="text-xl font-semibold text-gray-700">
+              Question <span className="text-blue-600">{currentIndex + 1}</span> of {' '}
+              <span className="text-gray-500">{questions.length}</span>
+            </div>
+            {totalFilledQuestions > 0 && (
+              <div className="text-sm text-gray-500 mt-1">
+                {totalFilledQuestions} ready to submit
+              </div>
+            )}
+          </div>
+          
           <button
-            type="button"
             onClick={() => setCurrentIndex(Math.min(questions.length - 1, currentIndex + 1))}
             disabled={currentIndex === questions.length - 1 || isSubmitting}
-            className={`p-2 rounded-full ${currentIndex === questions.length - 1 ? 'text-gray-400' : 'text-blue-600 hover:bg-blue-50'}`}
+            className={`p-3 rounded-full ${currentIndex === questions.length - 1 ? 'text-gray-400' : 'text-blue-600 hover:bg-blue-50'} transition-colors`}
           >
-            Next
+            <FiChevronRight size={24} />
           </button>
         </div>
+
+        {currentSubjectId && (
+          <div className="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full font-medium">
+            Subject: {currentSubjectName}
+          </div>
+        )}
       </div>
 
-      <div className="mb-6">
+      {/* Question Input */}
+      <div className="mb-8">
         <label htmlFor="question" className="block text-sm font-medium text-gray-700 mb-2">
           Question Text *
         </label>
@@ -362,60 +384,69 @@ const AdminQuestionUploader = () => {
           id="question"
           value={current.question}
           onChange={handleQuestionChange}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200"
-          rows={3}
+          className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200"
+          rows={4}
           placeholder="Enter the question..."
           disabled={isSubmitting}
         />
       </div>
 
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Options *
-          <span className="ml-2 text-xs text-gray-500">(Select the correct one)</span>
+      {/* Options Section */}
+      <div className="mb-8">
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Options * <span className="ml-2 text-xs text-gray-500">(Select the correct one)</span>
         </label>
         
-        {current.options.map((option, index) => (
-          <div key={index} className="flex items-center mb-2">
-            <input
-              type="radio"
-              name="correctAnswer"
-              checked={current.answer === option}
-              onChange={() => handleAnswerChange(option)}
-              className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500"
-              disabled={!option.trim() || isSubmitting}
-            />
-            <input
-              type="text"
-              value={option}
-              onChange={(e) => handleOptionChange(index, e.target.value)}
-              className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200"
-              placeholder={`Option ${index + 1}`}
-              disabled={isSubmitting}
-            />
-            <button
-              type="button"
-              onClick={() => removeOption(index)}
-              disabled={current.options.length <= 1 || isSubmitting}
-              className={`ml-2 p-2 rounded-full ${current.options.length <= 1 ? 'text-gray-400' : 'text-red-600 hover:bg-red-50'}`}
-            >
-              <FiMinusCircle size={18} />
-            </button>
-          </div>
-        ))}
+        <div className="space-y-3">
+          {current.options.map((option, index) => (
+            <div key={index} className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleAnswerChange(option)}
+                className={`flex-shrink-0 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors ${current.answer === option ? 'bg-blue-600 border-blue-600' : 'border-gray-300 hover:border-blue-400'}`}
+                disabled={!option.trim() || isSubmitting}
+                aria-label={`Select option ${index + 1} as correct answer`}
+              >
+                {current.answer === option && (
+                  <FiCheckCircle className="text-white" size={16} />
+                )}
+              </button>
+              
+              <input
+                type="text"
+                value={option}
+                onChange={(e) => handleOptionChange(index, e.target.value)}
+                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200"
+                placeholder={`Option ${index + 1}`}
+                disabled={isSubmitting}
+              />
+              
+              <button
+                type="button"
+                onClick={() => removeOption(index)}
+                disabled={current.options.length <= 1 || isSubmitting}
+                className={`flex-shrink-0 p-2 rounded-full ${current.options.length <= 1 ? 'text-gray-400' : 'text-red-600 hover:bg-red-50'} transition-colors`}
+                aria-label={`Remove option ${index + 1}`}
+              >
+                <FiMinusCircle size={20} />
+              </button>
+            </div>
+          ))}
+        </div>
 
         <button
           type="button"
           onClick={addOption}
           disabled={current.options.length >= MAX_OPTIONS_PER_QUESTION || isSubmitting}
-          className={`mt-2 flex items-center text-sm ${current.options.length >= MAX_OPTIONS_PER_QUESTION ? 'text-gray-400' : 'text-green-600 hover:text-green-700'}`}
+          className={`mt-3 flex items-center gap-2 px-4 py-2 rounded-lg ${current.options.length >= MAX_OPTIONS_PER_QUESTION ? 'text-gray-400 bg-gray-100' : 'text-green-600 bg-green-50 hover:bg-green-100'} transition-colors`}
         >
-          <FiPlusCircle className="mr-1" size={16} />
+          <FiPlusCircle size={18} />
           Add Option
         </button>
       </div>
 
-      <div className="mb-6">
+      {/* Workings Section */}
+      <div className="mb-8">
         <label htmlFor="workings" className="block text-sm font-medium text-gray-700 mb-2">
           Explanation/Workings (Optional)
         </label>
@@ -423,71 +454,81 @@ const AdminQuestionUploader = () => {
           id="workings"
           value={current.workings}
           onChange={handleWorkingsChange}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200"
-          rows={2}
+          className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200"
+          rows={3}
           placeholder="Enter explanation or workings (optional)..."
           disabled={isSubmitting}
         />
       </div>
 
+      {/* Question Management */}
       <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-3">
           <button
             type="button"
             onClick={addNewQuestion}
             disabled={isSubmitting}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-gray-400 disabled:text-gray-600"
+            className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-gray-400 disabled:text-gray-600"
           >
-            <FiPlusCircle className="mr-2" />
+            <FiPlusCircle size={18} />
             Add New Question
           </button>
           <button
             type="button"
             onClick={() => removeQuestion(currentIndex)}
             disabled={questions.length <= 1 || isSubmitting}
-            className={`flex items-center px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${questions.length <= 1 ? 'bg-gray-300 text-gray-500' : 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'}`}
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${questions.length <= 1 ? 'bg-gray-300 text-gray-500' : 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'}`}
           >
-            <FiMinusCircle className="mr-2" />
+            <FiMinusCircle size={18} />
             Remove This Question
           </button>
         </div>
 
-        <div className="flex items-center">
-          <span className="text-sm text-gray-500 mr-2">
-            Ready to submit: {totalFilledQuestions}/{questions.length}
-          </span>
+        <div className="px-4 py-2 bg-gray-100 rounded-full text-sm text-gray-700">
+          Ready to submit: {totalFilledQuestions}/{questions.length}
         </div>
       </div>
 
+      {/* Feedback Message */}
       {localFeedback.message && (
-        <div className={`mb-6 p-4 rounded-lg ${localFeedback.type === 'error' ? 'bg-red-100 text-red-700' : localFeedback.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-          <div className="flex items-center">
-            {localFeedback.type === 'error' ? (
-              <FiAlertCircle className="mr-2" size={20} />
-            ) : localFeedback.type === 'success' ? (
-              <FiCheckCircle className="mr-2" size={20} />
-            ) : (
-              <FiUpload className="mr-2" size={20} />
-            )}
-            {localFeedback.message}
-          </div>
+        <div className={`mb-8 p-4 rounded-xl flex items-center gap-3 ${localFeedback.type === 'error' ? 'bg-red-100 text-red-700' : localFeedback.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+          {localFeedback.type === 'error' ? (
+            <FiAlertCircle size={20} />
+          ) : localFeedback.type === 'success' ? (
+            <FiCheckCircle size={20} />
+          ) : (
+            <FiUpload size={20} />
+          )}
+          <span>{localFeedback.message}</span>
         </div>
       )}
 
+      {/* Submit Button */}
       <div className="text-center">
         <button
           type="button"
           onClick={handleSubmitAll}
           disabled={!currentSubjectId || totalFilledQuestions === 0 || isSubmitting}
-          className={`px-6 py-3 rounded-full font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+          className={`px-8 py-4 text-lg rounded-xl font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
             !currentSubjectId || totalFilledQuestions === 0 || isSubmitting
-              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
           }`}
         >
-          {isSubmitting ? 'Submitting...' : `Submit All Questions (${totalFilledQuestions})`}
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Submitting...
+            </span>
+          ) : (
+            `Submit All Questions (${totalFilledQuestions})`
+          )}
         </button>
       </div>
+    </div>
     </div>
   );
 };

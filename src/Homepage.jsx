@@ -323,13 +323,13 @@ const HomePage = () => {
             className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 text-center"
           >
             <div className="p-6 bg-gray-50 rounded-xl">
-              <div className="text-4xl font-bold text-blue-600 mb-2">
+              <div className="text-3xl lg:text-4xl font-bold text-blue-600 mb-2">
                 <CountUp end={50} duration={2} />+
               </div>
               <div className="text-gray-600">Career Courses</div>
             </div>
             <div className="p-6 bg-gray-50 rounded-xl">
-              <div className="text-4xl font-bold text-blue-600 mb-2">
+              <div className="text-2xl font-bold text-blue-600 mb-2 lg:text-4xl">
                 <CountUp end={1000000} duration={2} />+
               </div>
               <div className="text-gray-600">Students Empowered</div>
