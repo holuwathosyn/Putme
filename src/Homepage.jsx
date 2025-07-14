@@ -14,7 +14,7 @@ import {
   FaChartLine
 } from "react-icons/fa";
 import { Link } from 'react-router-dom';
-
+import ChannelAlert from './ChannelAlert';
 // Data
 const ChooseUs = [
   {
@@ -204,6 +204,7 @@ const HomePage = () => {
   return (
     <>
       {/* Hero Section */}
+      <ChannelAlert/>
       <div className="min-h-screen bg-gray-50 font-sans">
         <section className="px-6 md:px-16 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
           <div className="space-y-6 mt-11">

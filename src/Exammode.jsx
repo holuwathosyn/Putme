@@ -62,9 +62,10 @@ const ExamMode = () => {
       const token = localStorage.getItem('token');
   
       const response = await axios.get(
-        `${API_BASE_URL}/exams/start?subject=${subjectId}&count=1`,
+        `${API_BASE_URL}/exams/start?subject=${subjectId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      
   
       const data = response.data.data;
   

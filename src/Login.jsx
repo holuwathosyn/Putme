@@ -1,33 +1,15 @@
 import React, { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-const loginUser = async (formData) => {
-  const normalizedData = {
-    ...formData,
-    email: formData.email.toLowerCase()
-  };
-
-  const res = await fetch(import.meta.env.VITE_API_LOGIN, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(normalizedData)
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Login failed');
-  }
-  return res.json();
-};
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const patterns = {
@@ -58,50 +40,7 @@ const LoginPage = () => {
     }
   };
 
-  const { mutate, isLoading } = useMutation({
-    mutationFn: loginUser,
-    onSuccess: (data) => {
-      // Store all important data
-      localStorage.setItem("token", data.data.accessToken);
-      localStorage.setItem("refreshToken", data.data.refreshToken);
-      localStorage.setItem("userId", data.data.userId);
-      localStorage.setItem("email", data.data.email);
-      localStorage.setItem("role", data.data.role);
-      localStorage.setItem("name", data.data.name); 
-
-      toast.success("Welcome back!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-
-      console.log('Login data:', data);
-
-      setTimeout(() => {
-        if (data.data.role === "admin") {
-          navigate('/AdminDasboard');
-        } else {
-          navigate('/StudentDashboard');
-        }
-      }, 1000);
-    },
-    onError: (error) => {
-      console.error('Login failed:', error);
-      toast.error(error.message || 'Something went wrong.', {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-    }
-  });
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
     for (const [name, value] of Object.entries(formData)) {
@@ -111,17 +50,49 @@ const LoginPage = () => {
 
     const isValid = Object.values(newErrors).every(err => !err);
     if (!isValid) {
-      toast.error('Please correct the errors in the form.', {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      toast.error('Please correct the errors in the form.');
       return;
     }
-    mutate(formData);
+
+    try {
+      setLoading(true);
+      const normalizedData = {
+        ...formData,
+        email: formData.email.toLowerCase()
+      };
+
+      const res = await axios.post(import.meta.env.VITE_API_LOGIN, normalizedData, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = res.data.data;
+
+      // Store tokens & user info
+      localStorage.setItem("token", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+      localStorage.setItem("userId", data.userId);
+      localStorage.setItem("email", data.email);
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("name", data.name);
+
+      toast.success("Welcome back!");
+
+      setTimeout(() => {
+        if (data.role === "admin") {
+          navigate('/AdminDasboard');
+        } else {
+          navigate('/StudentDashboard');
+        }
+      }, 1000);
+
+    } catch (error) {
+      console.error('Login failed:', error);
+      toast.error(
+        error.response?.data?.message || 'Login failed. Please try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -196,9 +167,9 @@ const LoginPage = () => {
           <button
             type="submit"
             className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5"
-            disabled={isLoading}
+            disabled={loading}
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
 
           <p className="text-center text-sm text-gray-500">

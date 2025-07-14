@@ -3,7 +3,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaFilePdf, FaSearch, FaShoppingCart, FaSpinner, 
-  FaCheckCircle, FaTimes, FaInfoCircle
+  FaCheckCircle, FaTimes, FaInfoCircle, FaDownload
 } from 'react-icons/fa';
 import Footer from './Footer';
 
@@ -19,15 +19,26 @@ const PdfStore = () => {
   const isMobile = window.innerWidth <= 768;
   const modalRef = useRef(null);
 
+  // Format file size nicely
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   // Fetch PDFs from API
   useEffect(() => {
     const fetchPdfs = async () => {
       try {
         setLoading(true);
         const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/pdf`);
-        let data = Array.isArray(response.data) ? response.data : response.data.data;
-        if (!Array.isArray(data)) data = [];
-        setPdfList(data.map(pdf => ({ ...pdf, quantity: 1 })));
+        let data = Array.isArray(response.data) ? response.data : response.data?.data || [];
+        setPdfList(data.map(pdf => ({ 
+          ...pdf, 
+          price: Number(pdf.price) || 0
+        })));
       } catch (err) {
         console.error("Fetch PDFs failed:", err);
         setStatusMessage({ 
@@ -47,7 +58,10 @@ const PdfStore = () => {
     if (savedCart) {
       try {
         const parsedCart = JSON.parse(savedCart);
-        setSelectedPdfs(parsedCart);
+        setSelectedPdfs(parsedCart.map(item => ({
+          ...item,
+          price: Number(item.price) || 0
+        })));
       } catch {
         localStorage.removeItem('pdfCart');
       }
@@ -81,7 +95,7 @@ const PdfStore = () => {
       setSelectedPdfs(prev =>
         prev.some(p => p.id === pdf.id)
           ? prev.filter(p => p.id !== pdf.id)
-          : [...prev, { ...pdf, quantity: 1 }]
+          : [...prev, pdf]
       );
     }
   };
@@ -94,7 +108,7 @@ const PdfStore = () => {
     setSelectedPdfs(prev =>
       prev.some(p => p.id === pdf.id)
         ? prev
-        : [...prev, { ...pdf, quantity: 1 }]
+        : [...prev, pdf]
     );
     setSelectedPdfDetail(null);
   };
@@ -161,29 +175,28 @@ const PdfStore = () => {
   );
 
   const totalItems = selectedPdfs.length;
-  const totalPrice = selectedPdfs.reduce((sum, pdf) => sum + (pdf.price || 0), 0);
+  const totalPrice = selectedPdfs.reduce((sum, pdf) => sum + (Number(pdf.price) || 0), 0);
 
   return (
-    <>
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Hero Section */}
-        <div className="text-center mt-10 mb-8">
-          <motion.h2 
-            initial={{ opacity: 0, y: -10 }}
+        <div className="text-center mt-20 mb-12">
+          <motion.h1 
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="md:text-4xl text-3xl text-gray-600 mb-3 font-bold"
+            transition={{ duration: 0.6, type: 'spring' }}
+            className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 mb-4"
           >
-            PUTME Exam Past Questions
-          </motion.h2>
+            PUTME Past Questions
+          </motion.h1>
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
             className="text-lg text-gray-600 max-w-2xl mx-auto"
           >
-            Browse, select, and securely purchase past questions
+            Premium exam preparation materials for your success
           </motion.p>
         </div>
 
@@ -194,6 +207,7 @@ const PdfStore = () => {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               className={`p-4 mb-6 rounded-lg shadow-sm ${
                 statusMessage.type === 'success' 
                   ? 'bg-green-50 text-green-800 border border-green-200' 
@@ -213,11 +227,16 @@ const PdfStore = () => {
         </AnimatePresence>
 
         {/* Main Content */}
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* PDF List Section */}
           <div className="flex-1">
             {/* Search Bar */}
-            <div className="relative mb-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="relative mb-8"
+            >
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <FaSearch className="text-gray-400" />
               </div>
@@ -226,71 +245,86 @@ const PdfStore = () => {
                 placeholder="Search past questions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
               />
-            </div>
+            </motion.div>
 
             {/* Loading State */}
             {loading && !pdfList.length ? (
               <div className="flex justify-center items-center py-20">
-                <FaSpinner className="animate-spin text-blue-600 h-12 w-12" />
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                >
+                  <FaSpinner className="text-blue-600 h-12 w-12" />
+                </motion.div>
               </div>
             ) : null}
 
             {/* PDF Grid */}
             {!loading && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPdfs.length > 0 ? (
-                  filteredPdfs.map(pdf => {
+                  filteredPdfs.map((pdf, index) => {
                     const selected = selectedPdfs.some(p => p.id === pdf.id);
                     return (
                       <motion.div
                         key={pdf.id}
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ delay: index * 0.05, duration: 0.3 }}
                         onClick={() => togglePdfSelection(pdf)}
-                        className={`p-4 bg-white rounded-lg cursor-pointer border transition-all ${
+                        className={`p-5 bg-white rounded-xl cursor-pointer border-2 transition-all duration-200 hover:shadow-lg ${
                           selected 
-                            ? 'border-blue-500 shadow-md' 
-                            : 'border-gray-200 hover:border-blue-300'
+                            ? 'border-blue-600 shadow-md' 
+                            : 'border-gray-200 hover:border-blue-400'
                         }`}
+                        whileHover={{ y: -5 }}
                       >
-                        <div className="flex items-start">
-                          <div className={`p-2 rounded-md mr-3 ${
-                            selected 
-                              ? 'bg-blue-500 text-white' 
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            <FaFilePdf className="h-4 w-4" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-start">
-                              <h3 className="font-medium truncate">{pdf.name}</h3>
-                              {selected && (
-                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full ml-2">
-                                  Selected
-                                </span>
-                              )}
+                        <div className="flex flex-col h-full">
+                          <div className="flex items-start mb-4">
+                            <div className={`p-3 rounded-lg mr-4 flex-shrink-0 ${
+                              selected 
+                                ? 'bg-blue-600 text-white' 
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              <FaFilePdf className="h-5 w-5" />
                             </div>
-                            <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                              {pdf.description || 'No description available'}
-                            </p>
-                            <div className="mt-2 flex items-center justify-between">
-                              <span className="text-xs text-gray-500">
-                                {(pdf.size / (1024 * 1024)).toFixed(2)} MB
-                              </span>
-                              <span className="font-bold text-blue-600">
-                                ₦{Number(pdf.price || 0).toFixed(2)}
-                              </span>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-lg font-semibold truncate">{pdf.name}</h3>
+                              <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                                {pdf.description || 'No description available'}
+                              </p>
                             </div>
                           </div>
+                          <div className="mt-auto flex items-center justify-between">
+                            <div className="flex items-center space-x-2 text-sm text-gray-500">
+                              <FaDownload className="text-blue-500" />
+                              <span>{pdf.size ? formatFileSize(pdf.size) : 'Size N/A'}</span>
+                            </div>
+                            <span className="text-lg font-bold text-blue-600">
+                              ₦{(Number(pdf.price) || 0).toFixed(2)}
+                            </span>
+                          </div>
+                          {selected && (
+                            <motion.div 
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="absolute -top-2 -right-2 bg-blue-600 text-white rounded-full p-1"
+                            >
+                              <FaCheckCircle className="h-4 w-4" />
+                            </motion.div>
+                          )}
                         </div>
                       </motion.div>
                     );
                   })
                 ) : (
-                  <div className="col-span-2 py-12 text-center">
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="col-span-3 py-12 text-center"
+                  >
                     <FaSearch className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                     <h3 className="text-lg font-medium text-gray-700">No documents found</h3>
                     <p className="text-gray-500 mt-1">
@@ -298,60 +332,82 @@ const PdfStore = () => {
                         ? 'Try a different search term' 
                         : 'No documents available at the moment'}
                     </p>
-                  </div>
+                  </motion.div>
                 )}
               </div>
             )}
           </div>
 
           {/* Shopping Cart Section */}
-          <div className="lg:w-80 w-full">
-            <div className="sticky top-4">
-              <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="text-lg font-bold mb-4 flex items-center">
+          <div className="lg:w-96 w-full">
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+              className="sticky top-6"
+            >
+              <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                <h3 className="text-xl font-bold mb-4 flex items-center">
                   <FaShoppingCart className="mr-2 text-blue-600" />
                   <span>Your Cart</span>
                   {totalItems > 0 && (
-                    <span className="ml-auto bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                    <motion.span 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="ml-auto bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium"
+                    >
                       {totalItems} item{totalItems !== 1 ? 's' : ''}
-                    </span>
+                    </motion.span>
                   )}
                 </h3>
                 
                 {selectedPdfs.length > 0 ? (
                   <>
-                    <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 mb-4">
-                      {selectedPdfs.map(pdf => (
-                        <motion.div 
-                          key={pdf.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="bg-gray-50 p-3 rounded-md border border-gray-200"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-800 truncate">{pdf.name}</h4>
-                              <span className="text-sm text-blue-600 font-medium">
-                                ₦{Number(pdf.price || 0).toFixed(2)}
-                              </span>
+                    <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                      <AnimatePresence>
+                        {selectedPdfs.map(pdf => (
+                          <motion.div 
+                            key={pdf.id}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="bg-gray-50 p-4 rounded-lg border border-gray-200 overflow-hidden"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-gray-800 truncate">{pdf.name}</h4>
+                                <div className="flex items-center mt-1 text-sm text-gray-500">
+                                  <span>{pdf.size ? formatFileSize(pdf.size) : 'Size N/A'}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-4 ml-4">
+                                <span className="font-medium text-blue-600 whitespace-nowrap">
+                                  ₦{(Number(pdf.price) || 0).toFixed(2)}
+                                </span>
+                                <button 
+                                  onClick={() => removePdf(pdf.id)} 
+                                  className="text-gray-400 hover:text-red-500 transition-colors"
+                                >
+                                  <FaTimes />
+                                </button>
+                              </div>
                             </div>
-                            <button 
-                              onClick={() => removePdf(pdf.id)} 
-                              className="text-gray-400 hover:text-red-500 ml-2"
-                            >
-                              <FaTimes />
-                            </button>
-                          </div>
-                        </motion.div>
-                      ))}
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
                     </div>
 
-                    <div className="border-t pt-4">
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="mt-6 border-t pt-4"
+                    >
                       <div className="flex justify-between items-center mb-4">
                         <span className="text-gray-600">Total</span>
-                        <span className="font-bold text-blue-600">
-                          ₦{totalPrice.toFixed(2)}
+                        <span className="text-lg font-bold text-blue-600">
+                          ₦{(Number(totalPrice) || 0).toFixed(2)}
                         </span>
                       </div>
 
@@ -365,18 +421,19 @@ const PdfStore = () => {
                           placeholder="your@email.com"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                           required
                         />
                       </div>
 
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
                         onClick={handleBuyPdfs}
                         disabled={loading || isCheckingOut}
-                        className={`w-full py-2.5 rounded-md text-white font-medium flex justify-center items-center ${
+                        className={`w-full py-3 rounded-md text-white font-medium flex justify-center items-center transition-all ${
                           loading || isCheckingOut
                             ? 'bg-blue-400 cursor-not-allowed'
-                            : 'bg-blue-600 hover:bg-blue-700'
+                            : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg'
                         }`}
                       >
                         {loading || isCheckingOut ? (
@@ -385,23 +442,23 @@ const PdfStore = () => {
                             Processing...
                           </>
                         ) : (
-                          `Pay ₦${totalPrice.toFixed(2)}`
+                          `Pay ₦${(Number(totalPrice) || 0).toFixed(2)}`
                         )}
-                      </button>
+                      </motion.button>
 
-                      <div className="mt-2 flex items-center text-xs text-gray-500">
-                        <FaInfoCircle className="mr-1" />
+                      <div className="mt-3 flex items-center text-xs text-gray-500">
+                        <FaInfoCircle className="mr-1 flex-shrink-0" />
                         <span>Secure payment processing</span>
                       </div>
-                    </div>
+                    </motion.div>
                   </>
                 ) : (
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-center py-6"
+                    className="text-center py-8"
                   >
-                    <FaShoppingCart className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                    <FaShoppingCart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
                     <p className="text-gray-500">Your cart is empty</p>
                     <p className="text-sm text-gray-400 mt-1">
                       Select documents to add to your cart
@@ -409,7 +466,7 @@ const PdfStore = () => {
                   </motion.div>
                 )}
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
 
@@ -419,56 +476,60 @@ const PdfStore = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
               <motion.div 
                 ref={modalRef}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-white p-5 rounded-lg w-full max-w-sm max-h-[90vh] overflow-y-auto"
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ type: 'spring', damping: 25 }}
+                className="bg-white p-6 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-bold text-gray-800">{selectedPdfDetail.name}</h3>
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-xl font-bold text-gray-800">{selectedPdfDetail.name}</h3>
                   <button 
                     onClick={() => setSelectedPdfDetail(null)} 
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <FaTimes />
                   </button>
                 </div>
                 
-                <div className="flex items-center text-sm text-gray-500 mb-3">
-                  <span className="mr-2">{(selectedPdfDetail.size / (1024*1024)).toFixed(2)} MB</span>
-                  <span>•</span>
-                  <span className="ml-2 font-bold text-blue-600">
-                    ₦{Number(selectedPdfDetail.price).toFixed(2)}
+                <div className="flex items-center text-sm text-gray-500 mb-4">
+                  <div className="flex items-center mr-4">
+                    <FaDownload className="mr-1 text-blue-500" />
+                    <span>{selectedPdfDetail.size ? formatFileSize(selectedPdfDetail.size) : 'Size N/A'}</span>
+                  </div>
+                  <span className="font-bold text-blue-600">
+                    ₦{(Number(selectedPdfDetail.price) || 0).toFixed(2)}
                   </span>
                 </div>
 
-                <div className="mb-4">
-                  <h4 className="font-medium text-gray-700 mb-1">Description</h4>
-                  <p className="text-gray-600 text-sm">
-                    {selectedPdfDetail.description || 'No description available.'}
+                <div className="mb-6">
+                  <h4 className="font-medium text-gray-700 mb-2">Description</h4>
+                  <p className="text-gray-600">
+                    {selectedPdfDetail.description || 'No description available for this document.'}
                   </p>
                 </div>
 
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => addToCartFromModal(selectedPdfDetail)}
-                  className={`w-full py-2.5 rounded-md text-white font-medium ${
+                  className={`w-full py-3 rounded-md text-white font-medium ${
                     selectedPdfs.some(p => p.id === selectedPdfDetail.id)
                       ? 'bg-green-600 hover:bg-green-700'
                       : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
+                  } transition-colors shadow-md`}
                 >
                   {selectedPdfs.some(p => p.id === selectedPdfDetail.id)
-                    ? 'Already in Cart'
+                    ? 'Added to Cart'
                     : 'Add to Cart'}
-                </button>
+                </motion.button>
               </motion.div>
             </div>
           )}
         </AnimatePresence>
-      </main>
+      </main> 
+<Footer/>
+     
     </div>
-    <Footer/>
-    </>
   );
 };
 
