@@ -19,6 +19,8 @@ const StudentDashboard = () => {
   const [exams, setExams] = useState([]);
   const [userDetails, setUserDetails] = useState(null);
   const [showExams, setShowExams] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState('');
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -44,6 +46,12 @@ const StudentDashboard = () => {
         setUserDetails(userData.data);
         setIsPremium(userData.data.subscriptionStatus);
         setLoading(false);
+
+        // Check subscription status and show payment modal if not subscribed
+        if (!userData.data.subscriptionStatus) {
+          setShowPaymentModal(true);
+          initializePayment();
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Failed to load dashboard data');
@@ -54,10 +62,33 @@ const StudentDashboard = () => {
     fetchData();
   }, []);
 
+  const initializePayment = async () => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/subscriptions`,
+        {
+          callback_url: `${window.location.origin}/home`
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      if (response.data.status) {
+        setPaymentUrl(response.data.data.authorization_url);
+      }
+    } catch (error) {
+      console.error('Error initializing payment:', error);
+      toast.error('Failed to initialize payment');
+    }
+  };
+
   useEffect(() => {
     const fetchTotalExam = async () => {
       try {
-        const getTotalExam = await axios.get(`${API_BASE_URL}users/exams`, {
+        const getTotalExam = await axios.get(`${API_BASE_URL}/users/exams`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -148,14 +179,65 @@ const StudentDashboard = () => {
     }
   };
 
+  const handlePaymentClose = () => {
+    setShowPaymentModal(false);
+  };
+
+  const handlePaymentRedirect = () => {
+    window.location.href = paymentUrl;
+  };
+
   return (
-    <div className=" min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <motion.div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div 
+            className="bg-white p-8 rounded-xl shadow-2xl text-center max-w-md w-full mx-4"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring' }}
+          >
+            <div className="mb-6">
+              <FaCrown className="text-4xl text-amber-500 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">Premium Subscription Required</h3>
+              <p className="text-gray-600 mb-6">
+                You need to subscribe to access all features. Get unlimited exams, detailed analytics, and more!
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <motion.button
+                onClick={handlePaymentRedirect}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg shadow font-medium"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                disabled={!paymentUrl}
+              >
+                {paymentUrl ? 'Proceed to Payment' : 'Initializing Payment...'}
+              </motion.button>
+              
+              <button
+                onClick={handlePaymentClose}
+                className="w-full text-gray-500 hover:text-gray-700 font-medium py-2"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
       <motion.div
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="
-        mt-16 max-w-6xl mx-auto"
+        className="mt-16 max-w-6xl mx-auto"
       >
         {/* Header */}
         <motion.div 
@@ -375,7 +457,7 @@ const StudentDashboard = () => {
                 <p className="font-medium text-gray-800">{userDetails.email}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500 mb-1"> Status</p>
+                <p className="text-sm text-gray-500 mb-1">Status</p>
                 <p className={`font-medium ${isPremium ? 'text-amber-500' : 'text-gray-800'}`}>
                   {isPremium ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'}
                 </p>

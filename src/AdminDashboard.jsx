@@ -28,6 +28,50 @@ import {
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
+
+const axiosWithAuth = async (options) => {
+  try {
+    const token = localStorage.getItem("token");
+    options.headers = {
+      ...options.headers,
+      Authorization: `Bearer ${token}`
+    };
+    return await axios(options);
+  } catch (err) {
+    if (err.response && err.response.status === 401) {
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (!refreshToken) throw err;
+
+      try {
+        const refreshResponse = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/auth/refresh`,
+          { refreshToken },
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+
+        const newAccessToken = refreshResponse.data.data.accessToken;
+        const newRefreshToken = refreshResponse.data.data.refreshToken;
+
+        localStorage.setItem("token", newAccessToken);
+        localStorage.setItem("refreshToken", newRefreshToken);
+
+      
+        options.headers = {
+          ...options.headers,
+          Authorization: `Bearer ${newAccessToken}`
+        };
+        return await axios(options);
+      } catch (refreshErr) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        window.location.href = "/login"; 
+        throw refreshErr;
+      }
+    }
+    throw err;
+  }
+};
+
 const AdminDashboard = () => {
   // Dashboard state
   const [dashboardData, setDashboardData] = useState({
@@ -48,29 +92,20 @@ const AdminDashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
 
-  // Fetch all dashboard data
+  // Fetch dashboard data
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setDashboardData(prev => ({
-          ...prev,
-          isLoading: false,
-          error: "Please login to view dashboard"
-        }));
-        return;
-      }
-      
       const [analyticsRes, pdfAnalyticsRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/analytics`, {
-          headers: { Authorization: `Bearer ${token}` }
+        axiosWithAuth({
+          method: 'GET',
+          url: `${import.meta.env.VITE_API_BASE_URL}/analytics`
         }),
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/analytics/pdf`, {
-          headers: { Authorization: `Bearer ${token}` }
+        axiosWithAuth({
+          method: 'GET',
+          url: `${import.meta.env.VITE_API_BASE_URL}/analytics/pdf`
         })
       ]);
 
-      // Calculate total revenue from PDF analytics
       const totalRevenue = pdfAnalyticsRes.data?.data?.reduce((sum, pdf) => {
         return sum + (pdf.price * pdf.purchase_count);
       }, 0) || 0;
@@ -97,25 +132,12 @@ const AdminDashboard = () => {
   const fetchSubjects = async () => {
     try {
       setSubjectLoading(true);
-      const token = localStorage.getItem("token");
-      
-      if (!token) {
-        setSubjectError("Please login to manage subjects");
-        setSubjectLoading(false);
-        return;
-      }
-      
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/subjects`,
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Cache-Control': 'no-cache'
-          } 
-        }
-      );
-      
-      // Handle different API response structures
+      const response = await axiosWithAuth({
+        method: 'GET',
+        url: `${import.meta.env.VITE_API_BASE_URL}/subjects`,
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+
       let subjectsData = [];
       if (Array.isArray(response.data)) {
         subjectsData = response.data;
@@ -124,13 +146,13 @@ const AdminDashboard = () => {
       } else if (response.data && response.data.subjects) {
         subjectsData = response.data.subjects;
       }
-      
+
       setSubjects(subjectsData);
       setSubjectError(null);
     } catch (error) {
       setSubjectError(
-        error.response?.data?.message || 
-        error.response?.data?.error || 
+        error.response?.data?.message ||
+        error.response?.data?.error ||
         "Failed to load subjects"
       );
       toast.error('Failed to load subjects');
@@ -163,20 +185,13 @@ const AdminDashboard = () => {
       toast.warning('Subject name cannot be empty');
       return;
     }
-  
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error('Please login to update subjects');
-      return;
-    }
-  
+
     try {
-      await axios.patch(
-        `${import.meta.env.VITE_API_BASE_URL}/subjects/${id}`,
-        { subject: newSubjectName },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
+      await axiosWithAuth({
+        method: 'PATCH',
+        url: `${import.meta.env.VITE_API_BASE_URL}/subjects/${id}`,
+        data: { subject: newSubjectName }
+      });
       await fetchSubjects();
       setEditingSubject(null);
       setNewSubjectName('');
@@ -185,30 +200,23 @@ const AdminDashboard = () => {
       toast.error(error.response?.data?.message || "Failed to update subject");
     }
   };
-  
+
   // Delete subject
   const handleDeleteSubject = async (id) => {
     if (!window.confirm('Are you sure you want to delete this subject?')) return;
-  
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error('Please login to delete subjects');
-      return;
-    }
-  
+
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/subjects/${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
+      await axiosWithAuth({
+        method: 'DELETE',
+        url: `${import.meta.env.VITE_API_BASE_URL}/subjects/${id}`
+      });
       await fetchSubjects();
       toast.success('Subject deleted successfully');
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete subject");
     }
   };
-  
+
   // Add new subject
   const handleAddSubject = async () => {
     if (!newSubjectName.trim()) {
@@ -216,23 +224,13 @@ const AdminDashboard = () => {
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error('Please login to add subjects');
-      return;
-    }
-
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/subjects`,
-        { subjects: [newSubjectName] },
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          } 
-        }
-      );
+      const response = await axiosWithAuth({
+        method: 'POST',
+        url: `${import.meta.env.VITE_API_BASE_URL}/subjects`,
+        data: { subjects: [newSubjectName] },
+        headers: { 'Content-Type': 'application/json' }
+      });
 
       if (response.data) {
         setNewSubjectName('');
@@ -242,17 +240,17 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       toast.error(
-        error.response?.data?.message || 
-        error.response?.data?.error || 
+        error.response?.data?.message ||
+        error.response?.data?.error ||
         "Failed to add subject"
       );
     }
   };
 
   return (
-    <div className=" mila flex flex-col  md:flex-row min-h-screen bg-gray-100">
+    <div className="mina flex flex-col md:flex-row min-h-screen bg-gray-100">
       {/* Mobile Header */}
-      <div className="md:hidden  flex items-center justify-between p-4 bg-white shadow z-50">
+      <div className="mina mt-30 md:hidden flex items-center justify-between p-4 bg-white shadow z-50">
         <h1 className="text-xl font-bold text-indigo-600">Admin Panel</h1>
         <button 
           onClick={() => setShowSidebar(!showSidebar)} 
@@ -530,11 +528,11 @@ const SidebarLinks = () => (
     </Link>
     
     <Link 
-      to="#" 
+      to="/SubjecAction" 
       className="flex items-center space-x-2 hover:text-indigo-600 transition-colors p-2 rounded hover:bg-indigo-50"
     >
       <FiList className="text-xl" />
-      <span>Transaction History</span>
+      <span>Edit Questions </span>
     </Link>
     <Link 
       to="/AddExam" 

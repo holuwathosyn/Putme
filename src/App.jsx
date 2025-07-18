@@ -18,6 +18,8 @@ import PdfUploader from "./UploadPdf";
 import BuyPdf from "./BuyPast";
 import  FaQs from "./Faq";
 import ExamLandingPage from "./ExamLandingPage";
+import SubjecAction from "./SubjectActions";
+import EditQuestions from "./edit-questions";
 export default function App() {
   return (
     <Router>
@@ -39,6 +41,8 @@ export default function App() {
 <Route path="/PdfUploader" element={<PdfUploader />} />
 <Route path="/BuyPdf" element={<BuyPdf />} />
 <Route path="/FAQs" element={<FaQs />} />
+<Route path="/SubjecAction" element={<SubjecAction />} /> 
+<Route path="/edit-questions/:subjectId" element={<EditQuestions />} />
           <Route path="/ExamMode" element={<ExamMode  />} />
           <Route path="/ForgotPasswordPage" element={<ForgotPasswordPage />} />
      

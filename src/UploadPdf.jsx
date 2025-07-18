@@ -27,7 +27,9 @@ const PdfUploader = () => {
     formData.append('file', file);
 
     try {
-      const token = localStorage.getItem('token');
+      let token = localStorage.getItem('token');
+
+      // Attempt initial request
       const response = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/questions/pdf-upload`,
         formData,
@@ -44,7 +46,48 @@ const PdfUploader = () => {
       setPrice('');
       setFile(null);
     } catch (error) {
-      setErrorMessage(error.response?.data?.message || 'Failed to upload PDF');
+      // If 401, attempt refresh
+      if (error.response?.status === 401) {
+        try {
+          const refreshToken = localStorage.getItem('refreshToken');
+          const refreshResponse = await axios.post(
+            `${import.meta.env.VITE_API_BASE_URL}/auth/refresh`,
+            { refreshToken }
+          );
+
+          // Store new tokens
+          const newAccessToken = refreshResponse.data.data.accessToken;
+          const newRefreshToken = refreshResponse.data.data.refreshToken;
+          localStorage.setItem('token', newAccessToken);
+          localStorage.setItem('refreshToken', newRefreshToken);
+
+          // Retry original request with new token
+          await axios.post(
+            `${import.meta.env.VITE_API_BASE_URL}/questions/pdf-upload`,
+            formData,
+            {
+              headers: {
+                'Authorization': `Bearer ${newAccessToken}`,
+                'Content-Type': 'multipart/form-data',
+              }
+            }
+          );
+
+          setSuccessMessage('PDF uploaded successfully!');
+          setName('');
+          setPrice('');
+          setFile(null);
+        } catch (refreshError) {
+          setErrorMessage('Session expired. Please login again.');
+          // Clear tokens and redirect to login
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          // Optionally redirect to login page
+          // window.location.href = '/login';
+        }
+      } else {
+        setErrorMessage(error.response?.data?.message || 'Failed to upload PDF');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +95,7 @@ const PdfUploader = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="ffff w-full   max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="ffff w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Card-like header with floating effect */}
         <div className="relative mt-16 bg-white pt-8 px-6">
           <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-600 p-3 rounded-xl shadow-lg">
