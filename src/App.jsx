@@ -20,6 +20,9 @@ import  FaQs from "./Faq";
 import ExamLandingPage from "./ExamLandingPage";
 import SubjecAction from "./SubjectActions";
 import EditQuestions from "./edit-questions";
+import Exam from "./Exam"
+import QuestionGeneratorwithAi from "./GenerateQuestions"
+ 
 export default function App() {
   return (
     <Router>
@@ -47,7 +50,10 @@ export default function App() {
           <Route path="/ForgotPasswordPage" element={<ForgotPasswordPage />} />
      
           <Route path="/ResetPasswordPage" element={<ResetPasswordPage  />} />
-           
+           <Route path="/QuestionGeneratorwithAi" element={<QuestionGeneratorwithAi/>}/>
+
+
+<Route path="/exam/:exam_id" element={<Exam />} />
         </Routes>
       </div>
     </Router>

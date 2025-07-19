@@ -2,7 +2,8 @@ import axiosClient from './axiosClient';
 import React, { useState, useEffect } from 'react';
 import { 
   FiUpload, FiPlusCircle, FiMinusCircle, FiCheckCircle, 
-  FiAlertCircle, FiChevronDown, FiChevronLeft, FiChevronRight
+  FiAlertCircle, FiChevronDown, FiChevronLeft, FiChevronRight,
+  FiZap
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
@@ -27,6 +28,8 @@ const AdminQuestionUploader = () => {
   const [localFeedback, setLocalFeedback] = useState({ message: '', type: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
+  const [showGenerationMethod, setShowGenerationMethod] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const current = questions[currentIndex];
   const totalFilledQuestions = questions.filter(q => q.question.trim() !== '' && q.options.length >= 2 && q.answer.trim() !== '').length;
@@ -67,6 +70,64 @@ const AdminQuestionUploader = () => {
   
     fetchSubjects();
   }, [API_BASE_URL]);
+
+  const handleSubjectSelection = (subjectId) => {
+    setCurrentSubjectId(subjectId);
+    setIsSubjectDropdownOpen(false);
+    setShowGenerationMethod(true);
+  };
+
+  const handleManualGeneration = () => {
+    setShowGenerationMethod(false);
+  };
+
+  const handleAIGeneration = async () => {
+    if (!currentSubjectId) return;
+    
+    setIsGeneratingAI(true);
+    setLocalFeedback({ message: 'Generating questions with AI...', type: 'info' });
+    
+    try {
+      const response = await axiosClient.post('/questions/generate', {
+        subject_id: currentSubjectId,
+        subject_name: currentSubjectName,
+        num_questions: 100
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.data.status) {
+        setLocalFeedback({ 
+          message: 'AI questions generated successfully! Review and edit them as needed.', 
+          type: 'success' 
+        });
+        
+        // If the API returns the generated questions, you would set them here
+        // For now, we'll just add empty questions to demonstrate
+        setQuestions(
+          Array(100).fill().map(() => ({
+            question: '',
+            options: [''],
+            answer: '',
+            workings: ''
+          }))
+        );
+      } else {
+        throw new Error(response.data.message || 'Failed to generate questions');
+      }
+    } catch (error) {
+      console.error("AI Generation Error:", error);
+      setLocalFeedback({ 
+        message: `AI generation failed: ${error.message}`, 
+        type: 'error' 
+      });
+    } finally {
+      setIsGeneratingAI(false);
+      setShowGenerationMethod(false);
+    }
+  };
 
   const addNewQuestion = () => {
     setQuestions([...questions, {
@@ -171,21 +232,14 @@ const AdminQuestionUploader = () => {
     return true;
   };
 
-  const handleSubjectChange = (value) => {
-    setCurrentSubjectId(Number(value));
-    setIsSubjectDropdownOpen(false);
-  };
-
   const submitQuestionsToAPI = async (data) => {
-    
     try { 
-
-      const response = await axiosClient.post(`/questions/bulk`,data);
+      const response = await axiosClient.post(`/questions/bulk`, data);
 
       if(response.data.ok){
-      toast.success(`Successfully submitted `);
+        toast.success(`Successfully submitted ${data.questions.length} questions`);
       }
-         } catch (error) {
+    } catch (error) {
       console.error("API Error:", error);
       if (error.message.includes('Failed to fetch') ||
           error.message.includes('ERR_NETWORK_CHANGED') ||
@@ -249,7 +303,7 @@ const AdminQuestionUploader = () => {
     setLocalFeedback({ message: 'Submitting questions...', type: 'info' });
 
     try {
-      const result = await submitQuestionsToAPI(questionsToSubmit);
+      await submitQuestionsToAPI(questionsToSubmit);
       
       setLocalFeedback({ 
         message: `Success! ${questionsToSubmit.questions.length} questions submitted for ${currentSubjectName}.`, 
@@ -275,6 +329,47 @@ const AdminQuestionUploader = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (showGenerationMethod) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="max-w-md mx-auto bg-white shadow-lg rounded-xl p-8 text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            How would you like to create questions for {currentSubjectName}?
+          </h2>
+          
+          <div className="space-y-4">
+            <button
+              onClick={handleManualGeneration}
+              className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <FiPlusCircle size={20} />
+              <span className="text-lg font-medium">Create Questions Manually</span>
+            </button>
+            
+            <button
+              onClick={handleAIGeneration}
+              disabled={isGeneratingAI}
+              className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-lg transition-colors ${isGeneratingAI ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+            >
+              <FiZap size={20} />
+              <span className="text-lg font-medium">
+                {isGeneratingAI ? 'Generating...' : 'Generate with AI (100 questions)'}
+              </span>
+            </button>
+          </div>
+
+          {localFeedback.message && (
+            <div 
+              className={`mt-6 p-3 rounded-lg ${localFeedback.type === 'error' ? 'bg-red-100 text-red-700' : localFeedback.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}
+            >
+              {localFeedback.message}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -310,7 +405,7 @@ const AdminQuestionUploader = () => {
                 {subjects.map((subject) => (
                   <button
                     key={subject.id}
-                    onClick={() => handleSubjectChange(subject.id)}
+                    onClick={() => handleSubjectSelection(subject.id)}
                     className={`w-full text-left px-4 py-3 hover:bg-gray-100 ${currentSubjectId === subject.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700'}`}
                     role="option"
                     aria-selected={currentSubjectId === subject.id}
@@ -412,9 +507,9 @@ const AdminQuestionUploader = () => {
                   type="text"
                   value={option}
                   onChange={(e) => handleOptionChange(index, e.target.value)}
+                  disabled={isSubmitting}
                   className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200"
                   placeholder={`Option ${index + 1}`}
-                  disabled={isSubmitting}
                   aria-label={`Option ${index + 1}`}
                 />
                 
