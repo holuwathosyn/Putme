@@ -21,7 +21,9 @@ import ExamLandingPage from "./ExamLandingPage";
 import SubjecAction from "./SubjectActions";
 import EditQuestions from "./edit-questions";
 import Exam from "./Exam"
-import QuestionGeneratorwithAi from "./GenerateQuestions"
+import QuestionGeneratorwithAi from "./GenerateQuestions";
+import ExamResultsScreen from "./ExamResult";
+import ExamReview from "./examreview";
  
 export default function App() {
   return (
@@ -53,7 +55,9 @@ export default function App() {
            <Route path="/QuestionGeneratorwithAi" element={<QuestionGeneratorwithAi/>}/>
 
 
-<Route path="/exam/:exam_id" element={<Exam />} />
+<Route path="/exam" element={<Exam />} />
+ <Route path="/exam-results" element={<ExamResultsScreen />} />
+ <Route path="/exam-review" element={<ExamReview/>}/>
         </Routes>
       </div>
     </Router>

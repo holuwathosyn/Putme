@@ -67,7 +67,7 @@ const StudentDashboard = () => {
       const response = await axios.post(
         `${API_BASE_URL}/subscriptions`,
         {
-          callback_url: `${window.location.origin}/home`
+          callback_url: `${window.location.origin}/StudentDashboard`
         },
         {
           headers: {
@@ -89,9 +89,9 @@ const StudentDashboard = () => {
     const fetchTotalExam = async () => {
       try {
         const getTotalExam = await axios.get(`${API_BASE_URL}/users/exams`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+         headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      }
         });
         setExams(getTotalExam.data.data);
       } catch (err) {
@@ -104,7 +104,7 @@ const StudentDashboard = () => {
   const handleLogout = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/logout`, {
+       const res = await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -179,9 +179,6 @@ const StudentDashboard = () => {
     }
   };
 
-  const handlePaymentClose = () => {
-    setShowPaymentModal(false);
-  };
 
   const handlePaymentRedirect = () => {
     window.location.href = paymentUrl;
@@ -221,13 +218,7 @@ const StudentDashboard = () => {
               >
                 {paymentUrl ? 'Proceed to Payment' : 'Initializing Payment...'}
               </motion.button>
-              
-              <button
-                onClick={handlePaymentClose}
-                className="w-full text-gray-500 hover:text-gray-700 font-medium py-2"
-              >
-                Maybe Later
-              </button>
+            
             </div>
           </motion.div>
         </motion.div>
@@ -361,11 +352,11 @@ const StudentDashboard = () => {
               </motion.button>
               <Link to="/ExamMode">
                 <motion.button
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg shadow"
+                  className="w-full flex items-center font-bold text-3xl p-2 justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg shadow"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <MdOutlineDashboardCustomize /> Start Exam 
+                  <MdOutlineDashboardCustomize /> PROCEED WITH THE EXAM
                 </motion.button>
               </Link>
             </div>

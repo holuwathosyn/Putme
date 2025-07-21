@@ -4,7 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { Link } from 'react-router-dom';
 
+/**
+ * QuizApp Component - A complete quiz application with animations and interactive features
+ * @returns {JSX.Element} The main quiz application component
+ */
 const QuizApp = () => {
+  // State management
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -17,7 +22,9 @@ const QuizApp = () => {
   const [timeLeft, setTimeLeft] = useState(30);
   const [isCorrect, setIsCorrect] = useState(null);
 
-  // Enhanced confetti effect
+  /**
+   * Enhanced confetti effect for celebration
+   */
   const fireConfetti = () => {
     confetti({
       particleCount: 150,
@@ -27,10 +34,13 @@ const QuizApp = () => {
     });
   };
 
-  // Fetch subjects with beautiful loading animation
+  /**
+   * Fetch subjects from API with loading animation
+   */
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
+        // Using axios.get instead of fetch
         const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/subjects`);
         await new Promise(resolve => setTimeout(resolve, 800)); // Smooth delay
         setSubjects(response.data.data || []);
@@ -43,7 +53,9 @@ const QuizApp = () => {
     fetchSubjects();
   }, []);
 
-  // Timer with pulse animation when low
+  /**
+   * Timer effect with pulse animation when time is low
+   */
   useEffect(() => {
     if (!selectedSubject || quizCompleted) return;
     const timer = setInterval(() => {
@@ -59,6 +71,9 @@ const QuizApp = () => {
     return () => clearInterval(timer);
   }, [currentQuestionIndex, quizCompleted]);
 
+  /**
+   * Handle when time runs out for a question
+   */
   const handleTimeUp = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -68,12 +83,18 @@ const QuizApp = () => {
     }
   };
 
-  // Enhanced question fetching with animations
+  /**
+   * Fetch questions for a selected subject
+   * @param {number} subjectId - The ID of the subject to fetch questions for
+   */
   const fetchQuestions = async (subjectId) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/sample/exam?subject_id=${subjectId}`);
+      // Using axios.get with query parameters
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/sample/exam`, {
+        params: { subject_id: subjectId }
+      });
       await new Promise(resolve => setTimeout(resolve, 500)); // Smooth transition
       setQuestions(response.data.data || []);
       setSelectedSubject(subjects.find(sub => sub.id === subjectId));
@@ -86,7 +107,11 @@ const QuizApp = () => {
     }
   };
 
-  // Enhanced option selection with feedback
+  /**
+   * Handle option selection with visual feedback
+   * @param {number} questionId - The ID of the question
+   * @param {number} optionId - The ID of the selected option
+   */
   const handleOptionSelect = (questionId, optionId) => {
     setIsCorrect(null); // Reset feedback
     setSelectedOptions(prev => ({
@@ -100,7 +125,9 @@ const QuizApp = () => {
     }, 200);
   };
 
-  // Enhanced quiz submission
+  /**
+   * Submit the quiz and calculate score
+   */
   const submitQuiz = async () => {
     try {
       setLoading(true);
@@ -108,7 +135,9 @@ const QuizApp = () => {
         question_id: parseInt(questionId),
         selected_option_id: optionId
       }));
-      const response = await axios.post( `${import.meta.env.VITE_API_BASE_URL}/sample/score`, { answers });
+      
+      // Using axios.post to submit answers
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/sample/score`, { answers });
       setScore(response.data.data);
       setQuizCompleted(true);
       if (response.data.data.scorePercentage >= 70) {
@@ -121,6 +150,9 @@ const QuizApp = () => {
     }
   };
 
+  /**
+   * Reset the quiz to initial state
+   */
   const restartQuiz = () => {
     setSelectedSubject(null);
     setQuestions([]);
@@ -137,6 +169,7 @@ const QuizApp = () => {
   // UI SCENARIOS BELOW
   // ==================
 
+  // Loading state
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50">
       <motion.div 
@@ -169,6 +202,7 @@ const QuizApp = () => {
     </div>
   );
 
+  // Error state
   if (error) return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50">
       <motion.div 
@@ -202,6 +236,7 @@ const QuizApp = () => {
     </div>
   );
 
+  // Subject selection screen
   if (!selectedSubject && !quizCompleted) return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 py-12 px-4">
       <div className="max-w-5xl mt-20 mx-auto">
@@ -272,13 +307,14 @@ const QuizApp = () => {
     </div>
   );
 
+  // Quiz completion screen
   if (quizCompleted && score) return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50">
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }} 
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        className="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 border border-gray-100"
+        className="bg-white mt-16 p-8 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 border border-gray-100"
       >
         <div className="text-center mb-8">
           <motion.div 
@@ -354,6 +390,7 @@ const QuizApp = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
+          <p className=' text-center font-sans font-bold p-2 m-2'>Kindly subscribe to premium version to view all questions and answers</p>
           <Link to="/RegistrationPage">
           <motion.button 
             whileHover={{ 
@@ -372,6 +409,7 @@ const QuizApp = () => {
     </div>
   );
 
+  // No questions available state
   if (!currentQuestion) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50">
@@ -402,6 +440,7 @@ const QuizApp = () => {
     );
   }
 
+  // Main quiz interface
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 py-8 px-4">
       <motion.div 
