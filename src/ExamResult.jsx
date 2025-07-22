@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { FiCheck, FiX, FiAward, FiBook, FiHome, FiBarChart2 } from "react-icons/fi";
 import axiosClient from "./axiosClient";
 
@@ -7,14 +7,14 @@ const ExamResultsScreen = () => {
   const [searchParams] = useSearchParams();
   const examId = searchParams.get("exam-id");
   const [examDetail, setExamDetail] = useState({});
-  const { state } = useLocation();
+  const [results, setResults] = useState({});
 
   const navigate = useNavigate();
-  const { results, examData } = state || {};
 
   async function getExamDetails(examId) {
     const response = await axiosClient.get(`/exams/${examId}`);
-    setExamDetail(response.data.data);
+    setExamDetail(response.data.data.results);
+    setResults(response.data.data);
   }
 
   useEffect(() => {
@@ -24,20 +24,18 @@ const ExamResultsScreen = () => {
   }, [examId]);
 
   const transformedData = useMemo(() => {
-    const data = examData || examDetail;
+    const data = examDetail;
     const subjects = Object.keys(data);
     return subjects.map((subject) => ({
       subject: subject,
       questions: data[subject],
     }));
-  }, [examData, examDetail]);
+  }, [examDetail]);
 
   // Calculate subject results based on transformed data
   const subjectResults = useMemo(() => {
     return transformedData.map((subject) => {
-      const questions = examId ? subject.questions.results : subject.questions;
-
-      const questionsWithAnswers = questions.map((question) => {
+      const questionsWithAnswers = subject.questions.map((question) => {
         const isCorrect = question.selectedOptionId === question.correctOptionId;
         return {
           ...question,
@@ -52,30 +50,28 @@ const ExamResultsScreen = () => {
       return {
         subject: subject.subject,
         total: subject.questions.length,
-        correct: correctAnswers || subject.questions.score,
-        percentage:
-          Math.round((correctAnswers / subject.questions.length) * 100) ||
-          subject.questions.percentage,
+        correct: correctAnswers,
+        percentage: Math.round((correctAnswers / subject.questions.length) * 100),
         questions: questionsWithAnswers,
       };
     });
-  }, [examId, transformedData]);
+  }, [transformedData]);
 
-  // if (!results || !examData || !examDetail) {
-  //   return (
-  //     <div className="flex items-center justify-center h-screen">
-  //       <div className="text-center">
-  //         <div className="text-2xl font-bold mb-4">No Results Found</div>
-  //         <button
-  //           onClick={() => navigate("/")}
-  //           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-  //         >
-  //           Return Home
-  //         </button>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  if (!examDetail || !results) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="text-2xl font-bold mb-4">No Results Found</div>
+          <button
+            onClick={() => navigate("/")}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Return Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -83,42 +79,44 @@ const ExamResultsScreen = () => {
         <h1 className="text-3xl font-bold text-center mb-8">Exam Results</h1>
 
         {/* Summary Card */}
-        {/* <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-6 text-center">Your Performance Summary</h2>
+        {results && (
+          <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+            <h2 className="text-xl font-semibold mb-6 text-center">Your Performance Summary</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-blue-50 p-4 rounded-lg text-center">
-              <FiBarChart2 className="text-blue-600 text-2xl mx-auto mb-2" />
-              <div className="text-sm text-gray-600">Total Questions</div>
-              <div className="text-2xl font-bold">{results.total_questions}</div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 p-4 rounded-lg text-center">
+                <FiBarChart2 className="text-blue-600 text-2xl mx-auto mb-2" />
+                <div className="text-sm text-gray-600">Total Questions</div>
+                <div className="text-2xl font-bold">{results.total_questions}</div>
+              </div>
+
+              <div className="bg-green-50 p-4 rounded-lg text-center">
+                <FiCheck className="text-green-600 text-2xl mx-auto mb-2" />
+                <div className="text-sm text-gray-600">Correct Answers</div>
+                <div className="text-2xl font-bold">{results.score}</div>
+              </div>
+
+              <div className="bg-red-50 p-4 rounded-lg text-center">
+                <FiX className="text-red-600 text-2xl mx-auto mb-2" />
+                <div className="text-sm text-gray-600">Wrong Answers</div>
+                <div className="text-2xl font-bold">{results.attempted - results.score}</div>
+              </div>
+
+              <div className="bg-purple-50 p-4 rounded-lg text-center">
+                <FiAward className="text-purple-600 text-2xl mx-auto mb-2" />
+                <div className="text-sm text-gray-600">Percentage</div>
+                <div className="text-2xl font-bold">{results.percentage}%</div>
+              </div>
             </div>
 
-            <div className="bg-green-50 p-4 rounded-lg text-center">
-              <FiCheck className="text-green-600 text-2xl mx-auto mb-2" />
-              <div className="text-sm text-gray-600">Correct Answers</div>
-              <div className="text-2xl font-bold">{results.score}</div>
-            </div>
-
-            <div className="bg-red-50 p-4 rounded-lg text-center">
-              <FiX className="text-red-600 text-2xl mx-auto mb-2" />
-              <div className="text-sm text-gray-600">Wrong Answers</div>
-              <div className="text-2xl font-bold">{results.attempted - results.score}</div>
-            </div>
-
-            <div className="bg-purple-50 p-4 rounded-lg text-center">
-              <FiAward className="text-purple-600 text-2xl mx-auto mb-2" />
-              <div className="text-sm text-gray-600">Percentage</div>
-              <div className="text-2xl font-bold">{results.percentage}%</div>
+            <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
+              <div
+                className="bg-gradient-to-r from-blue-500 to-green-500 h-4 rounded-full"
+                style={{ width: `${results.percentage}%` }}
+              ></div>
             </div>
           </div>
-
-          <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
-            <div
-              className="bg-gradient-to-r from-blue-500 to-green-500 h-4 rounded-full"
-              style={{ width: `${results.percentage}%` }}
-            ></div>
-          </div>
-        </div> */}
+        )}
 
         {/* Subject-wise Breakdown */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-8">
@@ -155,7 +153,7 @@ const ExamResultsScreen = () => {
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
                   <span>{subject.correct} correct</span>
-                  {!examId && <span>{subject.total - subject.correct} incorrect</span>}
+                  <span>{subject.total - subject.correct} incorrect</span>
                 </div>
               </div>
             ))}

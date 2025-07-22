@@ -109,12 +109,7 @@ const ExamScreen = () => {
 
       setSubmitResult(response.data.data);
 
-      navigate("/exam-results", {
-        state: {
-          results: response.data.data,
-          examData: response.data.data.results,
-        },
-      });
+      navigate(`/exam-results?exam-id=${examData.exam_id}`);
     } catch (error) {
       console.error("Failed to submit exam:", error);
       setError("Failed to submit exam. Please try again.");
