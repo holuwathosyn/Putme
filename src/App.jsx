@@ -12,52 +12,52 @@ import ContactPage from "./Contact";
 import UpdatePassword from "./UpdatePassword";
 import TestMode from "./Testmode";
 import ExamMode from "./Exammode";
-import ResetPasswordPage  from "./ResetPasswordPage";
+import ResetPasswordPage from "./ResetPasswordPage";
 import StudentDashboard from "./StudentDashboard";
 import PdfUploader from "./UploadPdf";
 import BuyPdf from "./BuyPast";
-import  FaQs from "./Faq";
+import FaQs from "./Faq";
 import ExamLandingPage from "./ExamLandingPage";
 import SubjecAction from "./SubjectActions";
 import EditQuestions from "./edit-questions";
-import Exam from "./Exam"
+import Exam from "./Exam";
 import QuestionGeneratorwithAi from "./GenerateQuestions";
 import ExamResultsScreen from "./ExamResult";
 import ExamReview from "./examreview";
- 
+
 export default function App() {
   return (
     <Router>
       <div>
-        <Navbar /> 
+        <Navbar />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/AdminDasboard" element={<AdminDasboard />} />
           <Route path="/AddExam" element={<AddExam />} />
           <Route path="/AddCourses" element={<AddCourses />} />
           <Route path="/RegistrationPage" element={<RegistrationPage />} />
-            <Route path="/login" element={<LoginPage/>}/>
-            <Route path="/ExamLandingPage" element={<ExamLandingPage />} />
-          <Route path="/ContactPage" element={<ContactPage/>}/>
-          <Route path="/UpdatePassword" element={<UpdatePassword/>}  />
-          <Route path="/TestMode" element={<TestMode  />} />
-<Route path="/StudentDashboard" element={<StudentDashboard  />}  />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/ExamLandingPage" element={<ExamLandingPage />} />
+          <Route path="/ContactPage" element={<ContactPage />} />
+          <Route path="/UpdatePassword" element={<UpdatePassword />} />
+          <Route path="/TestMode" element={<TestMode />} />
+          <Route path="/StudentDashboard" element={<StudentDashboard />} />
+          <Route path="/exam-details" element={<StudentDashboard />} />
 
-<Route path="/PdfUploader" element={<PdfUploader />} />
-<Route path="/BuyPdf" element={<BuyPdf />} />
-<Route path="/FAQs" element={<FaQs />} />
-<Route path="/SubjecAction" element={<SubjecAction />} /> 
-<Route path="/edit-questions/:subjectId" element={<EditQuestions />} />
-          <Route path="/ExamMode" element={<ExamMode  />} />
+          <Route path="/PdfUploader" element={<PdfUploader />} />
+          <Route path="/BuyPdf" element={<BuyPdf />} />
+          <Route path="/FAQs" element={<FaQs />} />
+          <Route path="/SubjecAction" element={<SubjecAction />} />
+          <Route path="/edit-questions/:subjectId" element={<EditQuestions />} />
+          <Route path="/ExamMode" element={<ExamMode />} />
           <Route path="/ForgotPasswordPage" element={<ForgotPasswordPage />} />
-     
-          <Route path="/ResetPasswordPage" element={<ResetPasswordPage  />} />
-           <Route path="/QuestionGeneratorwithAi" element={<QuestionGeneratorwithAi/>}/>
 
+          <Route path="/ResetPasswordPage" element={<ResetPasswordPage />} />
+          <Route path="/QuestionGeneratorwithAi" element={<QuestionGeneratorwithAi />} />
 
-<Route path="/exam" element={<Exam />} />
- <Route path="/exam-results" element={<ExamResultsScreen />} />
- <Route path="/exam-review" element={<ExamReview/>}/>
+          <Route path="/exam" element={<Exam />} />
+          <Route path="/exam-results" element={<ExamResultsScreen />} />
+          <Route path="/exam-review" element={<ExamReview />} />
         </Routes>
       </div>
     </Router>
