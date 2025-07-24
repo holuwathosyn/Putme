@@ -1,6 +1,6 @@
+import axiosClient from "./axiosClient";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { toast } from "react-toastify";
 
 const EditQuestions = () => {
   const { subjectId } = useParams();
@@ -18,48 +18,25 @@ const EditQuestions = () => {
         setErrorMsg("");
         setSuccessMsg("");
 
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setErrorMsg("Authentication token not found. Please log in.");
-          return;
-        }
+        const response = await axiosClient.get(`/subjects/${subjectId}`);
 
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/subjects/${subjectId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const { data } = await response.data;
 
-        const json = await response.json();
+        setSubject(data);
 
-        if (!response.ok) {
-          throw new Error(json.message || `Failed with status ${response.status}`);
-        }
-
-        if (!json.status || !json.data) {
-          throw new Error(json.message || "Server returned unexpected structure");
-        }
-
-        setSubject(json.data);
-        
         // Normalize API data to your preferred format
-        const normalizedQuestions = (json.data.questions || []).map(q => ({
+        const normalizedQuestions = (data.questions || []).map((q) => ({
           id: q.id,
           Question: q.question || "",
           Explanation: q.explanation || "",
           correctAnswer: q.correctAnswer || "",
-          Options: (q.options || []).map(opt => ({
+          Options: (q.options || []).map((opt) => ({
             id: opt.id,
-            Text: opt.optionText || ""
-          }))
+            Text: opt.optionText || "",
+          })),
         }));
-        
-        setQuestions(normalizedQuestions);
 
+        setQuestions(normalizedQuestions);
       } catch (err) {
         console.error("Fetch error:", err);
         setErrorMsg(err.message || "Failed to fetch questions");
@@ -75,92 +52,84 @@ const EditQuestions = () => {
     setEditingId(id);
     setErrorMsg("");
     setSuccessMsg("");
-    
   };
 
   const handleCancel = () => {
     setEditingId(null);
   };
 
- const handleSave = async (questionId) => {
-  try {
-    setIsLoading(true);
-    setErrorMsg("");
-    setSuccessMsg("");
+  const handleSave = async (questionId) => {
+    try {
+      setIsLoading(true);
+      setErrorMsg("");
+      setSuccessMsg("");
 
-    const questionToUpdate = questions.find(q => q.id === questionId);
-    if (!questionToUpdate) {
-      throw new Error("Question not found");
-    }
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Authentication token not found. Please log in.");
-    }
-
-    // Fix: Change "questions" to "question" to match API expectations
-    const payload = {
-      question: questionToUpdate.Question, // singular "question"
-      explanation: questionToUpdate.Explanation,
-      correctAnswer: questionToUpdate.correctAnswer,
-      options: questionToUpdate.Options.map(opt => ({
-        id: opt.id,
-        text: opt.Text
-      }))
-    };
-
-    const response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/questions/${questionId}/update`,
-      {
-        method: "POST", // or "PUT" based on your API
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload)
+      const questionToUpdate = questions.find((q) => q.id === questionId);
+      if (!questionToUpdate) {
+        throw new Error("Question not found");
       }
-    );
 
-    const json = await response.json();
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please log in.");
+      }
 
-    if (!response.ok) {
-      throw new Error(json.message || `Failed with status ${response.status}`);
+      // Fix: Change "questions" to "question" to match API expectations
+      const payload = {
+        question: questionToUpdate.Question, // singular "question"
+        explanation: questionToUpdate.Explanation,
+        correctAnswer: questionToUpdate.correctAnswer,
+        options: questionToUpdate.Options.map((opt) => ({
+          id: opt.id,
+          text: opt.Text,
+        })),
+      };
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/questions/${questionId}/update`,
+        {
+          method: "POST", // or "PUT" based on your API
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.message || `Failed with status ${response.status}`);
+      }
+
+      setSuccessMsg("Question updated successfully!");
+      setEditingId(null);
+    } catch (err) {
+      console.error("Update error:", err);
+      setErrorMsg(err.message || "Failed to update question");
+    } finally {
+      setIsLoading(false);
     }
-
-    setSuccessMsg("Question updated successfully!");
-    setEditingId(null);
-
-  } catch (err) {
-    console.error("Update error:", err);
-    setErrorMsg(err.message || "Failed to update question");
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleQuestionChange = (id, value) => {
-    setQuestions(prev =>
-      prev.map(q => q.id === id ? { ...q, Question: value } : q)
-    );
+    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, Question: value } : q)));
   };
 
   const handleExplanationChange = (id, value) => {
-    setQuestions(prev =>
-      prev.map(q => q.id === id ? { ...q, Explanation: value } : q)
-    );
+    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, Explanation: value } : q)));
   };
 
   const handleCorrectAnswerChange = (id, value) => {
-    setQuestions(prev =>
-      prev.map(q => q.id === id ? { ...q, correctAnswer: value } : q)
-    );
+    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, correctAnswer: value } : q)));
   };
 
   const handleOptionChange = (questionId, optionId, value) => {
-    setQuestions(prev =>
-      prev.map(q => {
+    setQuestions((prev) =>
+      prev.map((q) => {
         if (q.id !== questionId) return q;
-        const updatedOptions = q.Options.map(opt =>
+        const updatedOptions = q.Options.map((opt) =>
           opt.id === optionId ? { ...opt, Text: value } : opt
         );
         return { ...q, Options: updatedOptions };
@@ -169,12 +138,12 @@ const EditQuestions = () => {
   };
 
   const handleAddOption = (questionId) => {
-    setQuestions(prev =>
-      prev.map(q => {
+    setQuestions((prev) =>
+      prev.map((q) => {
         if (q.id !== questionId) return q;
         const newOption = {
           id: Date.now(), // Temporary ID
-          Text: ""
+          Text: "",
         };
         return { ...q, Options: [...q.Options, newOption] };
       })
@@ -182,10 +151,10 @@ const EditQuestions = () => {
   };
 
   const handleRemoveOption = (questionId, optionId) => {
-    setQuestions(prev =>
-      prev.map(q => {
+    setQuestions((prev) =>
+      prev.map((q) => {
         if (q.id !== questionId) return q;
-        const filteredOptions = q.Options.filter(opt => opt.id !== optionId);
+        const filteredOptions = q.Options.filter((opt) => opt.id !== optionId);
         return { ...q, Options: filteredOptions };
       })
     );
@@ -197,9 +166,7 @@ const EditQuestions = () => {
         <h1 className="text-3xl font-bold text-gray-900">
           Edit Questions for {subject?.name || "Subject"}
         </h1>
-        <p className="text-gray-600 mt-1">
-          Manage all questions under this subject
-        </p>
+        <p className="text-gray-600 mt-1">Manage all questions under this subject</p>
       </div>
 
       {isLoading && (
@@ -231,13 +198,14 @@ const EditQuestions = () => {
 
       <div className="space-y-6">
         {questions.map((question) => (
-          <div key={question.id} className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+          <div
+            key={question.id}
+            className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden"
+          >
             {editingId === question.id ? (
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Question
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Question</label>
                   <input
                     type="text"
                     value={question.Question}
@@ -272,9 +240,7 @@ const EditQuestions = () => {
 
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Options
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700">Options</label>
                     <button
                       onClick={() => handleAddOption(question.id)}
                       className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-md text-sm hover:bg-indigo-200"
@@ -282,14 +248,16 @@ const EditQuestions = () => {
                       + Add Option
                     </button>
                   </div>
-                  
+
                   <div className="space-y-2">
                     {question.Options.map((option) => (
                       <div key={option.id} className="flex items-center space-x-2">
                         <input
                           type="text"
                           value={option.Text}
-                          onChange={(e) => handleOptionChange(question.id, option.id, e.target.value)}
+                          onChange={(e) =>
+                            handleOptionChange(question.id, option.id, e.target.value)
+                          }
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                         />
                         <button
@@ -320,9 +288,7 @@ const EditQuestions = () => {
               </div>
             ) : (
               <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {question.Question}
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{question.Question}</h3>
 
                 {question.Explanation && (
                   <div className="bg-blue-50 p-3 rounded-md mb-3">
@@ -345,7 +311,11 @@ const EditQuestions = () => {
                     {question.Options.map((option) => (
                       <li
                         key={option.id}
-                        className={`px-3 py-2 rounded-md ${option.Text === question.correctAnswer ? 'bg-green-50 text-green-700' : 'bg-gray-50'}`}
+                        className={`px-3 py-2 rounded-md ${
+                          option.Text === question.correctAnswer
+                            ? "bg-green-50 text-green-700"
+                            : "bg-gray-50"
+                        }`}
                       >
                         {option.Text}
                       </li>

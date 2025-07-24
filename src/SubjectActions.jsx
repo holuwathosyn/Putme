@@ -14,21 +14,9 @@ const SubjectsList = () => {
         setIsLoading(true);
         setErrorMsg("");
 
-        const token = localStorage.getItem("token");
-        const response = await axiosClient(
-          `${import.meta.env.VITE_API_BASE_URL}/subjects?questions=true&count=true`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
+        const response = await axiosClient(`/subjects?count=true`);
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch subjects");
-        }
-
-        const { data } = await response.json();
+        const { data } = await response.data;
         setSubjects(data || []);
       } catch (err) {
         console.error("Error fetching subjects:", err);
@@ -69,11 +57,15 @@ const SubjectsList = () => {
 
       <div className="space-y-4">
         {subjects.map((subject) => (
-          <div key={subject.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex justify-between items-center">
+          <div
+            key={subject.id}
+            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex justify-between items-center"
+          >
             <div>
               <h2 className="text-lg font-semibold text-gray-900">{subject.name}</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Questions: <span className="font-medium text-indigo-600">{subject.questions?.length ?? 0}</span>
+                Questions:{" "}
+                <span className="font-medium text-indigo-600">{subject.questions_count}</span>
               </p>
             </div>
             <button
