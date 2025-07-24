@@ -329,10 +329,10 @@ const StudentDashboard = () => {
                 whileTap={{ scale: 0.98 }}
               >
                 <FaShoppingCart /> Get Past Questions
-              </motion.button>
+              </motion.button>  
               <Link to="/ExamMode">
                 <motion.button
-                  className="w-full flex items-center font-bold text-2xl p-2 justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg shadow"
+                  className="w-full flex items-center font-bold text-1xl lg:text-2xl p-2 justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg shadow"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
