@@ -332,7 +332,7 @@ const StudentDashboard = () => {
               </motion.button>
               <Link to="/ExamMode">
                 <motion.button
-                  className="w-full flex items-center font-bold text-3xl p-2 justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg shadow"
+                  className="w-full flex items-center font-bold text-2xl p-2 justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg shadow"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -357,7 +357,7 @@ const StudentDashboard = () => {
               <div className="text-center py-8">
                 <p className="text-gray-500">No exams taken yet</p>
                 <Link to="/ExamMode">
-                  <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition">
+                  <button className="mt-4 text-2xl  px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition">
                     Start Your First Exam
                   </button>
                 </Link>

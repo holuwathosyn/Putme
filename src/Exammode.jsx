@@ -170,10 +170,10 @@ const SubjectSelectionScreen = () => {
   const optionalSlotsAvailable = MAX_TOTAL_SUBJECTS - selectedSubjects.length;
 
   return (
-    <div className="relative h-screen bg-gray-50 overflow-hidden">
+    <div className="relative h-screen mila bg-gray-50 overflow-hidden">
       {/* Header Section */}
       <motion.header
-        className="bg-blue-700 p-4 shadow-md"
+        className="bg-blue-700 p-4 shadow-md "
         initial={{ y: -50 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.3 }}

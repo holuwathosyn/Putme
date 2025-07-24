@@ -77,7 +77,7 @@ const AdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     totalPdfs: 0,
     subscribers: 0,
-    totalRevenue: 0,
+   
     pdfAnalytics: [],
     isLoading: true,
     error: null
@@ -106,14 +106,12 @@ const AdminDashboard = () => {
         })
       ]);
 
-      const totalRevenue = pdfAnalyticsRes.data?.data?.reduce((sum, pdf) => {
-        return sum + (pdf.price * pdf.purchase_count);
-      }, 0) || 0;
+    
 
       setDashboardData({
         totalPdfs: pdfAnalyticsRes.data?.data?.length || 0,
         subscribers: analyticsRes.data?.data?.subscribedUsers || 0,
-        totalRevenue,
+       
         pdfAnalytics: pdfAnalyticsRes.data?.data || [],
         isLoading: false,
         error: null
@@ -176,7 +174,7 @@ const AdminDashboard = () => {
   const chartData = [
     { name: 'PDFs', value: dashboardData.totalPdfs },
     { name: 'Subscribers', value: dashboardData.subscribers },
-    { name: 'Revenue (₦)', value: dashboardData.totalRevenue }
+   
   ];
 
   // Update subject
@@ -353,8 +351,7 @@ const AdminDashboard = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PDF Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purchases</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Revenue</th>
-                  </tr>
+                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {dashboardData.pdfAnalytics.map((pdf) => (

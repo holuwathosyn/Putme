@@ -8,13 +8,24 @@ const ExamResultsScreen = () => {
   const examId = searchParams.get("exam-id");
   const [examDetail, setExamDetail] = useState({});
   const [results, setResults] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const navigate = useNavigate();
 
   async function getExamDetails(examId) {
-    const response = await axiosClient.get(`/exams/${examId}`);
-    setExamDetail(response.data.data.results);
-    setResults(response.data.data);
+    try {
+      setIsLoading(true);
+      const response = await axiosClient.get(`/exams/${examId}`);
+      setExamDetail(response.data.data.results);
+      setResults(response.data.data);
+      setError(null);
+    } catch (err) {
+      setError("Failed to fetch exam results. Please try again later.");
+      console.error("Error fetching exam details:", err);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -57,6 +68,39 @@ const ExamResultsScreen = () => {
     });
   }, [transformedData]);
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="text-xl font-semibold">Loading your results...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="text-2xl font-bold mb-4 text-red-600">{error}</div>
+          <button
+            onClick={() => getExamDetails(examId)}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-2"
+          >
+            Retry
+          </button>
+          <button
+            onClick={() => navigate("/")}
+            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+          >
+            Return Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!examDetail || !results) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -88,12 +132,6 @@ const ExamResultsScreen = () => {
                 <FiBarChart2 className="text-blue-600 text-2xl mx-auto mb-2" />
                 <div className="text-sm text-gray-600">Total Questions</div>
                 <div className="text-2xl font-bold">{results.total_questions}</div>
-              </div>
-
-              <div className="bg-green-50 p-4 rounded-lg text-center">
-                <FiCheck className="text-green-600 text-2xl mx-auto mb-2" />
-                <div className="text-sm text-gray-600">Correct Answers</div>
-                <div className="text-2xl font-bold">{results.score}</div>
               </div>
 
               <div className="bg-red-50 p-4 rounded-lg text-center">

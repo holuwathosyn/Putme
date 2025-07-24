@@ -9,6 +9,7 @@ import {
   FiGrid,
   FiSave,
   FiCheckCircle,
+  FiAlertTriangle,
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,13 +21,6 @@ const EXAM_DURATION_SECONDS = 7200; // 2 hours in seconds
 
 /**
  * ExamScreen Component
- *
- * This component handles the exam interface including:
- * - Displaying questions and options
- * - Navigation between questions
- * - Time management with a visible countdown timer
- * - Answer submission
- * - Auto-submission when time expires
  */
 const ExamScreen = () => {
   // State management
@@ -41,6 +35,7 @@ const ExamScreen = () => {
   const [submitResult, setSubmitResult] = useState(null);
   const [saveStatus, setSaveStatus] = useState({});
   const [error, setError] = useState(null);
+  const [showTimeUpModal, setShowTimeUpModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -56,8 +51,6 @@ const ExamScreen = () => {
 
   /**
    * Formats seconds into HH:MM:SS format
-   * @param {number} seconds - Time in seconds
-   * @returns {string} Formatted time string
    */
   const formatTime = useCallback((seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -70,8 +63,6 @@ const ExamScreen = () => {
 
   /**
    * Submits a single answer to the server
-   * @param {number} questionId - ID of the question being answered
-   * @param {number} optionId - ID of the selected option
    */
   const submitSingleAnswer = useCallback(
     async (questionId, optionId) => {
@@ -85,7 +76,6 @@ const ExamScreen = () => {
 
         setSaveStatus((prev) => ({ ...prev, [questionId]: "saved" }));
 
-        // Reset save status after 2 seconds
         setTimeout(() => {
           setSaveStatus((prev) => ({ ...prev, [questionId]: null }));
         }, 2000);
@@ -106,9 +96,7 @@ const ExamScreen = () => {
     setIsSubmitting(true);
     try {
       const response = await axiosClient.post(`/exams/${examData.exam_id}/submit`, {});
-
       setSubmitResult(response.data.data);
-
       navigate(`/exam-results?exam-id=${examData.exam_id}`);
     } catch (error) {
       console.error("Failed to submit exam:", error);
@@ -124,6 +112,7 @@ const ExamScreen = () => {
    */
   const handleAutoSubmit = useCallback(async () => {
     if (timeLeft <= 0 && !isSubmitting && !submitResult) {
+      setShowTimeUpModal(true);
       await submitExam();
     }
   }, [timeLeft, isSubmitting, submitResult]);
@@ -144,7 +133,6 @@ const ExamScreen = () => {
 
         setExamData(examDataFromState);
 
-        // Initialize selected options from existing answers
         const initialSelected = {};
         examDataFromState.groupedSubjects.forEach((group) => {
           group.questions.forEach((q) => {
@@ -153,7 +141,6 @@ const ExamScreen = () => {
             }
           });
         });
-        // setSelectedOptions(initialSelected);
       } catch (error) {
         console.error("Error loading exam data:", error);
         navigate("/");
@@ -162,7 +149,7 @@ const ExamScreen = () => {
 
     loadExamData();
 
-    // Set up timer that counts down and auto-submits when time expires
+    // Timer implementation
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -189,8 +176,6 @@ const ExamScreen = () => {
 
   /**
    * Handles option selection
-   * @param {number} questionId - ID of the question being answered
-   * @param {number} optionId - ID of the selected option
    */
   const handleOptionSelect = useCallback(
     (questionId, optionId) => {
@@ -205,8 +190,6 @@ const ExamScreen = () => {
 
   /**
    * Navigates to a specific question
-   * @param {number} subjectIdx - Index of the subject
-   * @param {number} questionIdx - Index of the question within the subject
    */
   const navigateToQuestion = useCallback(
     (subjectIdx, questionIdx) => {
@@ -273,9 +256,37 @@ const ExamScreen = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="mila  min-h-screen bg-gray-50 flex flex-col">
+      {/* Time Up Modal */}
+      <AnimatePresence>
+        {showTimeUpModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+            >
+              <div className="flex flex-col items-center text-center">
+                <FiAlertTriangle className="text-red-500 text-5xl mb-4" />
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">Time's Up!</h3>
+                <p className="text-gray-600 mb-6">
+                  Your exam has been automatically submitted. You'll be redirected to your results shortly.
+                </p>
+                <button
+                  onClick={() => navigate(`/exam-results?exam-id=${examData.exam_id}`)}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  View Results Now
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Header with progress and timer */}
-      <header className="bg-gradient-to-r from-blue-700 to-blue-600 text-white shadow-lg">
+      <header className=" bg-gradient-to-r from-blue-700 to-blue-600 text-white shadow-lg">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <button
@@ -301,15 +312,15 @@ const ExamScreen = () => {
               </div>
             </div>
 
-            {/* Timer display - more prominent with warning colors when time is low */}
-            <div
-              className={`flex items-center px-4 py-2 rounded-lg ${
-                timeLeft <= 300 ? "bg-red-600 animate-pulse" : "bg-blue-800"
-              }`}
-            >
-              <FiClock className="mr-2" />
-              <span className="font-mono text-lg font-bold">{formatTime(timeLeft)}</span>
-              {timeLeft <= 300 && <span className="ml-2 text-xs">HURRY!</span>}
+            {/* Single, prominent timer display */}
+            <div className={`flex items-center px-4 py-2 rounded-lg ${
+              timeLeft <= 600 ? "bg-red-600" : "bg-blue-800"
+            }`}>
+              <FiClock className="mr-2 text-xl" />
+              <div className="text-center">
+                <div className="font-mono text-xl font-bold">{formatTime(timeLeft)}</div>
+                <div className="text-xs">Time Remaining</div>
+              </div>
             </div>
           </div>
         </div>
@@ -317,7 +328,7 @@ const ExamScreen = () => {
 
       {/* Error message */}
       {error && (
-        <div className="fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50">
+        <div className="fixed top-20 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50">
           {error}
         </div>
       )}

@@ -215,9 +215,11 @@ const HomePage = () => {
               Get the edge you need to stand out in your Post-UTME screening.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+             <Link to="/RegistrationPage">
               <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium">
                 Start Learning Now
               </button>
+              </Link>
               <div className="flex gap-8">
                 <div>
                   <p className="text-2xl font-bold text-gray-900">50+</p>

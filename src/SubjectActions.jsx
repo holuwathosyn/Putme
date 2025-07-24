@@ -1,3 +1,4 @@
+import axiosClient from "./axiosClient";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -14,7 +15,7 @@ const SubjectsList = () => {
         setErrorMsg("");
 
         const token = localStorage.getItem("token");
-        const response = await fetch(
+        const response = await axiosClient(
           `${import.meta.env.VITE_API_BASE_URL}/subjects?questions=true&count=true`,
           {
             headers: {

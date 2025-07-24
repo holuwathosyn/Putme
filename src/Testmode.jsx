@@ -250,7 +250,7 @@ const QuizApp = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className=" text-2xl lg:text-4xl font-bold text-gray-600 mb-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600"
+            className=" text-2xl lg:text-4xl font-bold text-gray-600 mb-3 bg-clip-text "
           >
            Welcome to your PUTME TestMode!
           </motion.h1>
@@ -390,7 +390,7 @@ const QuizApp = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
-          <p className=' text-center font-sans font-bold p-2 m-2'>Kindly subscribe to premium version to view all questions and answers</p>
+          <p className=' text-gray-700 text-center font-sans font-bold p-2 m-2'>Kindly subscribe to premium version to view all questions and answers</p>
           <Link to="/RegistrationPage">
           <motion.button 
             whileHover={{ 
