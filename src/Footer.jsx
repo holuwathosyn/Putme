@@ -1,5 +1,88 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { FaFacebook, FaTwitter, FaLinkedin, FaWhatsapp } from "react-icons/fa";
+
+const SocialShare = ({ url, title, description }) => {
+  // Default values
+  const shareUrl = url || typeof window !== "undefined" ? window.location.href : "";
+  const shareTitle = title || (typeof document !== "undefined" ? document.title : "");
+  const shareText = `${shareTitle} ${shareUrl}`;
+
+  const openShareWindow = (url, name) => {
+    window.open(
+      url,
+      `${name}-share-dialog`,
+      "width=800,height=600,top=100,left=100"
+    );
+  };
+
+  const shareTo = {
+    facebook: () => openShareWindow(
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      "facebook"
+    ),
+    twitter: () => openShareWindow(
+      `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`,
+      "twitter"
+    ),
+    linkedin: () => openShareWindow(
+      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+      "linkedin"
+    ),
+    whatsapp: () => openShareWindow(
+      `https://wa.me/?text=${encodeURIComponent(shareText)}`,
+      "whatsapp"
+    ),
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Engagement message */}
+      <p className="text-center md:text-left text-gray-700 dark:text-gray-300 text-sm md:text-base">
+        Enjoying our content? Help spread the word! 🙌
+      </p>
+      
+      {/* Sharing buttons */}
+      <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+        {/* Facebook */}
+        <button
+          onClick={shareTo.facebook}
+          className="p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50"
+          aria-label="Share on Facebook"
+        >
+          <FaFacebook className="text-xl md:text-2xl" />
+        </button>
+
+        {/* Twitter */}
+        <button
+          onClick={shareTo.twitter}
+          className="p-3 rounded-full bg-blue-400 text-white hover:bg-blue-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50"
+          aria-label="Share on Twitter"
+        >
+          <FaTwitter className="text-xl md:text-2xl" />
+        </button>
+
+        {/* LinkedIn */}
+        <button
+          onClick={shareTo.linkedin}
+          className="p-3 rounded-full bg-blue-700 text-white hover:bg-blue-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-opacity-50"
+          aria-label="Share on LinkedIn"
+        >
+          <FaLinkedin className="text-xl md:text-2xl" />
+        </button>
+
+        {/* WhatsApp */}
+        <button
+          onClick={shareTo.whatsapp}
+          className="p-3 rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+          aria-label="Share on WhatsApp"
+        >
+          <FaWhatsapp className="text-xl md:text-2xl" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -63,6 +146,10 @@ export default function Footer() {
             <p className="text-sm leading-relaxed text-gray-600">
               Your go-to platform for conquering Post-UTME. Practice, learn, and succeed with confidence.
             </p>
+            {/* Added SocialShare component here */}
+            <div className="mt-6">
+              <SocialShare />
+            </div>
           </div>
 
           {/* Quick Links - Fade in with delay */}

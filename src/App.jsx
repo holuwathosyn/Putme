@@ -24,6 +24,7 @@ import Exam from "./Exam";
 import QuestionGeneratorwithAi from "./GenerateQuestions";
 import ExamResultsScreen from "./ExamResult";
 import ExamReview from "./examreview";
+import ErrorPage from "./NotFoundPage"
 
 export default function App() {
   return (
@@ -58,6 +59,8 @@ export default function App() {
           <Route path="/exam" element={<Exam />} />
           <Route path="/exam-results" element={<ExamResultsScreen />} />
           <Route path="/exam-review" element={<ExamReview />} />
+         {/*Error 404 */}
+         <Route path="*" element={<ErrorPage/>} />
         </Routes>
       </div>
     </Router>
