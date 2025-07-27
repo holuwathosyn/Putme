@@ -5,17 +5,21 @@ const ChannelAlert = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Show alert after a slight delay for better UX
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 2000);
-    return () => clearTimeout(timer);
+    // Check localStorage to see if alert was previously dismissed
+    const wasDismissed = localStorage.getItem('channelAlertDismissed');
+    if (!wasDismissed) {
+      // Show alert after a slight delay for better UX
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const handleDismiss = () => {
     setIsVisible(false);
-    // Remove any localStorage dismissal setting
-    localStorage.removeItem('channelAlertDismissed');
+    // Set flag in localStorage to remember dismissal
+    localStorage.setItem('channelAlertDismissed', 'true');
   };
 
   return (

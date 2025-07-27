@@ -185,9 +185,9 @@ const StudentDashboard = () => {
                 Premium Subscription Required
               </h3>
               <p className="text-gray-600 mb-6">
-                You need to subscribe to access all features. Get unlimited exams, detailed
-                analytics, and more!
-              </p>
+  You need to subscribe with ₦1,000 every month to access all features. Get unlimited exams, detailed analytics, and more!
+</p>
+
             </div>
 
             <div className="space-y-3">
