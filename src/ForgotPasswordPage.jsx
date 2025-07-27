@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
+// Get the environment variable
 const FORGOT_PASSWORD_URL = import.meta.env.VITE_FORGOT_PASSWORD_URL;
+console.log('Reset link URL:', FORGOT_PASSWORD_URL); // Debug log
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
@@ -10,6 +13,7 @@ const ForgotPasswordPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!email.trim()) {
       toast.error('Email is required');
       return;
@@ -17,19 +21,19 @@ const ForgotPasswordPage = () => {
 
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(email)) {
-      toast.error('Invalid email address');
+      toast.error('Please enter a valid email address');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(FORGOT_PASSWORD_URL ,{
+      const response = await fetch(FORGOT_PASSWORD_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           baseUrl: `${window.location.origin}/ResetPasswordPage`,
-          email
+          email,
         }),
       });
 
@@ -38,11 +42,11 @@ const ForgotPasswordPage = () => {
         throw new Error(errorData.message || 'Failed to send reset link');
       }
 
-      toast.success('Reset link sent! Check your email.');
+      toast.success('Password reset link sent. Please check your email.');
       setEmail('');
     } catch (error) {
-      console.error(error);
-      toast.error(error.message || 'Something went wrong.');
+      console.error('Forgot password error:', error);
+      toast.error(error.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
@@ -53,7 +57,7 @@ const ForgotPasswordPage = () => {
       <div className="bg-white shadow-xl rounded-lg p-8 w-full max-w-md">
         <h2 className="text-2xl font-bold text-center text-blue-600 mb-4">Forgot Password</h2>
         <p className="text-center text-gray-600 mb-6">
-          Enter your email to receive a reset link.
+          Enter your email address and we’ll send you a link to reset your password.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,12 +68,12 @@ const ForgotPasswordPage = () => {
             <input
               type="email"
               id="email"
-              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full mt-1 p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-200"
               placeholder="you@example.com"
               disabled={loading}
+              required
             />
           </div>
 
@@ -78,17 +82,18 @@ const ForgotPasswordPage = () => {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 transition disabled:opacity-70"
           >
-            {loading ? 'Sending...' : 'Request Reset Link'}
+            {loading ? 'Sending...' : 'Send Reset Link'}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-4">
           Remember your password?{' '}
           <Link to="/login" className="text-blue-600 font-semibold hover:underline">
-            Login
+            Log In
           </Link>
         </p>
       </div>
+
       <ToastContainer position="top-right" autoClose={4000} />
     </div>
   );
